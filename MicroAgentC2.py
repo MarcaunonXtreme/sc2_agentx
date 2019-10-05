@@ -39,14 +39,14 @@ from Memory import Memory, UnitMemory
 #  x -->
 
 slice_delta = [
-    (2,0),
-    (1.4, 1.4),
-    (0,2),
-    (-1.4, 1.4),
-    (-2.0, 0),
-    (-1.4, -1.4),
-    (0, -2.0),
-    (1.4, -1.4)
+    Point2((2,0)),
+    Point2((1.4, 1.4)),
+    Point2((0,2)),
+    Point2((-1.4, 1.4)),
+    Point2((-2.0, 0)),
+    Point2((-1.4, -1.4)),
+    Point2((0, -2.0)),
+    Point2((1.4, -1.4))
 ]
 
 #for the movement algorithm we slice the view up into 8 slices around the unit
@@ -57,13 +57,8 @@ def determine_slice_nr(unit_position : Point2, target : Point2):
     #TODO: implement something based on gradient that is faster than atan2 if possible?
     angle = math.atan2(delta.y, delta.x)
     angle = round(angle / (math.pi/4))
-    if delta.y >= 0.0:
-        return angle
-    else:
-        angle = 8 - angle
-        return angle if angle < 8 else 0
-
-
+    angle += 8
+    return angle % 8
 
 
 # This level of the agent takes care of micro type stuff
@@ -83,7 +78,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         self.delta_step_time = 1.0
         self.brain : AgentBrain.AgentBrain = None
         self.attack_network : AgentBrain.Network = None
-        self.flee_network : AgentBrain.Network = None
+        self.move_network : AgentBrain.Network = None
 
         self.enemy_memory : Memory = Memory()
         self.friendly_memory : Memory = Memory()
@@ -96,9 +91,9 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         assert isinstance(self.brain, AgentBrain.AgentBrain)
         #TODO Rather combine this into 1 network!
         #print(f"Agent got a new brain! {self.player_id}")
-        self.attack_network = brain.get_network("attack", 42, 4)
+        self.attack_network = brain.get_network("attack", 42, 2)
+        self.move_network = brain.get_network("move", 32, 2, hidden_count=16)
         assert isinstance(self.attack_network, AgentBrain.Network)
-
 
 
     async def on_step(self, iteration: int):
@@ -177,9 +172,14 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                 mem.enemy_in_range_count = 0
                 mem.can_attack_count = 0
 
+                mem.radar.fill(0)
+                for i in range(8):
+                    mem.radar[i, 0] = 20.0 #for closest friendly unit
+                    mem.radar[i, 1] = 20.0 #for closest enemy unit
+
                 enemy : UnitMemory
                 for enemy in self.enemy_memory.values:
-                    if unit.position._distance_squared(enemy.position) < 100.0:
+                    if unit.position._distance_squared(enemy.position) < 100.0: #TODO: make this 15**2
                         mem.enemy_in_range_count += 1
 
                         #was target previously?
@@ -189,19 +189,50 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                             else:
                                 enemy.attacking_previous_range += 1
 
+                        #some unit<>enemy calculations
+                        dist_to_enemy = unit.distance_to(enemy.position) - unit.radius - enemy.radius
+
+
+
+                        #Generate RADAR information
+                        s = determine_slice_nr(mem.position, enemy.position)
+                        #TODO: also process structures on radar! (as they can block things!)
+                        mem.radar[s,1] = min(mem.radar[s,1], dist_to_enemy) #closest enemy unit
+                        mem.radar[s,3] += 1 #scale somehow?
+
 
                         if enemy.missing == 0:
-                            dist_to_enemy = unit.distance_to(enemy.position) - unit.radius - enemy.radius
-                            attack_range = unit.air_range if enemy.unit.is_flying else unit.ground_range
-                            #enemy_attack_range = enemy.unit.air_range if unit.is_flying else enemy.unit.ground_range
 
-                            #Update can_attack_count - useful for managing attack priorities
-                            ratio = 1.0 / max(1.0, 1.0 + (dist_to_enemy - attack_range) * 5.0 / max(unit.movement_speed, 1.0))
+                            attack_range = unit.air_range if enemy.unit.is_flying else unit.ground_range
+                            enemy_attack_range = enemy.unit.air_range if unit.is_flying else enemy.unit.ground_range
+
+                            # Update can_attack_count - useful for managing attack priorities
+                            ratio = 1.0 / max(1.0, 1.0 + (dist_to_enemy - attack_range) * 5.0 / max(unit.movement_speed,                                                                                                    1.0))
                             enemy.can_attack_count += ratio
+
+                            # see if enemy is facing us?
+                            angle = math.atan2(unit.position.y - enemy.position.y, unit.position.x - enemy.position.x) - enemy.facing
+                            angle = min(math.fabs(angle), math.fabs(angle - math.pi*2))
+                            if angle < 0.020: #Not sure how find to make this
+                                if enemy.is_melee:
+                                    #TODO: scale this by some kind of threat calculation?
+                                    if dist_to_enemy < enemy_attack_range + 0.5:
+                                        mem.radar[s,4] += 1
+                                else:
+                                    if dist_to_enemy < enemy_attack_range + 0.1:
+                                        mem.radar[s,5] += 1
+
+                            #we in enemy range in general?
+                            if dist_to_enemy < enemy_attack_range + 0.1:
+                                mem.radar[s,6] += 1
+
+                            #7 = how far can we move back and still have enemy in range?
+                            mem.radar[s,7] = max(mem.radar[s,7], attack_range - dist_to_enemy - 0.1)
 
 
         #delete memory of any friendly units that died previously (can maybe do this via a callback??)
         self.friendly_memory.process_missing_friendly_units()
+
 
         #
         # for i,unit in enumerate(self.units):
@@ -343,6 +374,18 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             return
 
         unit_hp = (unit.health + unit.shield) / (unit.health_max + unit.shield_max)
+
+
+        #Calculate additional RADAR stuff: (relative to friendly units in area)
+        for u2 in self.units:
+            if mem.position._distance_squared(u2.position) < 100.0:
+
+                dist_to_friend = unit.distance_to(u2) - unit.radius - u2.radius
+
+                s = determine_slice_nr(mem.position, u2.position)
+                mem.radar[s,0] = min(mem.radar[s,0], dist_to_friend)
+                mem.radar[s,2] += 1 #scale somehow?
+
 
         #First create the general inputs that helps the unit decide against ALL enemies
         general_inputs = np.zeros(42)
@@ -491,9 +534,80 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         if unit.type_id in [UnitTypeId.DRONE, UnitTypeId.SCV, UnitTypeId.PROBE]:
             attack_target = None
 
-        # For now only attack:
 
-        if attack_target and best_pri >= 0.0:
+
+        #TODO's for RADAR:
+        # distance to fog of war
+        # distance to cliff/unpathable (for non-flying)
+        # distance to higher/lower ground? or something about that
+        # enemy/friendly structures! and mineral patches (anything blocking!)
+        # can move at all in this direction?
+        # distance to creep or out of creep (negative/positive)
+        # distance to friendly cargo ship?
+
+
+        move_pri = np.zeros(8)
+        #Process slices for move prioritization:
+        for s in range(8):
+            inputs = np.copy(mem.radar[s])
+            #scale normalizations for network required firstly:
+            inputs[0] = min(1.0, inputs[0] * 0.25) #dist 2 closest friendly unit
+            inputs[1] = min(1.0, inputs[1] * 0.25) #dist 2 closest enemy
+            inputs[2] = min(1.0, inputs[2] / 8) # nr of friendlies in this slice
+            inputs[3] = min(1.0, inputs[3] / 8) # nr of enemies in this slice
+            inputs[4] = min(1.0, inputs[4] / 8) # melee units facing us in this direction (and in range)
+            inputs[5] = min(1.0, inputs[5] / 8) # ranges units facing us in this direction (and in range)
+            inputs[6] = min(1.0, inputs[6] / 16) # enemy units that have us in range
+            inputs[7] = min(1.0, inputs[7] * 0.25) # how far we can move back and still keep "an" enemy in range
+            inputs[8] = min(1.0, inputs[8] * 0.25) # how far we need to move back to escape enemy range
+
+            #TODO: some normalization of highest attack priority target found in this slice direction (from attack network calculation)
+            #TODO: some threat prioritization system? ie how dangerous is this slice?
+            #TODO: Power projection stuff!!
+            #TODO: are we currently moving in this direction
+            #TODO: push mechanics of nearby units! (advanced)
+            #TODO: AOE information
+
+            #a few general inputs:
+            inputs[31] = unit_hp
+            inputs[30] = 1.0 if mem.is_melee else 0.0
+            inputs[29] = 1.0 if unit.is_cloaked or unit.is_burrowed else 0.0
+            if self.is_zerg:
+                inputs[28] = 1.0 if self.has_creep(unit) else 0.0
+            inputs[27] = min(1.0, unit.weapon_cooldown / 5.0)
+            inputs[26] = mem.speed2 # current speed
+
+
+            # Find results from network:
+            outputs = self.move_network.process(inputs)
+            move_pri[s] += outputs[0] # priority to move in this direction!
+            move_pri[(s + 4) % 8] += outputs[1] # priority to run away - ie move in opposite direction
+
+
+        #TODO: if unit wants to attack enemy outside range convert it to a move priority!!!
+
+        #TODO: move priority decisions!
+        # The general idea is that if move_pri >= 1.0 then we move in that direction
+        # maybe also move if attack priority < 0.0 ?
+        # note: it might take a while for the genetic algorithm to spit out >= 1.0 priorities.. maybe not the best idea?
+        move_pri -= move_pri.mean() #normalize it first around zero at least.
+        best_slice = move_pri.argmax()
+        move_pri = move_pri[best_slice]
+        if not mem.is_melee and unit.weapon_cooldown > 0.5:
+            move_pri *= 1.5 #boost move priority for stutter stepping on range units
+
+
+        #move or attack?
+        #TODO: flee!
+
+        if move_pri > 1.0:
+            if self.debug:
+                delta = slice_delta[best_slice] * move_pri * 5.0
+                self.draw_debug_line(unit, unit.position + delta)
+
+            self.do(unit.move(unit.position + slice_delta[best_slice]))
+
+        elif attack_target and best_pri >= 0.0:
             if self.debug:
                 self.draw_debug_line(unit, attack_target, (255, 50, 0))
 
