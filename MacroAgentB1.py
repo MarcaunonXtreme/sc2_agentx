@@ -18,7 +18,6 @@ from sc2.position import Point2
 from sc2.game_data import Cost
 from sc2.units import Units
 
-import pickle
 
 from BaseAgentA1 import BaseAgentA1
 

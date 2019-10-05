@@ -25,6 +25,8 @@ from MacroAgentB1 import MacroAgentB1
 
 import AgentBrain
 
+from Memory import Memory, UnitMemory
+
 # This level of the agent takes care of micro type stuff
 class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
@@ -183,7 +185,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             if unit.type_id not in [UnitTypeId.BROODLING, UnitTypeId.LARVA, UnitTypeId.EGG, UnitTypeId.MULE]:
 
                 if unit.got_enemies:
-                    await self.process_micro_unit_ground(unit, enemy_list)
+                    await self.process_micro_unit(unit, enemy_list)
                 else:
                     self.previous_hp[unit.tag] = (unit.health+unit.shield)/(unit.health_max+unit.shield_max)
                     #No enemies in range, switching to tactics
@@ -222,7 +224,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
 
 
-    async def process_micro_unit_ground(self, unit : Unit, enemy_list : Units):
+    async def process_micro_unit(self, unit : Unit, enemy_list : Units):
         attack_target = None
         best_pri = -1.0
         flee_pri = -1.0 # If this ends up positive normally the unit will attempt to flee
@@ -259,15 +261,15 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
         general_inputs = np.zeros(42)
         general_inputs[0] = unit_hp
-        general_inputs[1] = lost_hp
+        #general_inputs[1] = lost_hp
 
-        #weapon cool down - allows stutter stepping in theory?
-        general_inputs[4] = min(1.0, unit.weapon_cooldown / 4.0)
-        general_inputs[5] = 1.0 if unit.ground_range > 0.5 or unit.air_range > 0.5 and unit.weapon_cooldown == 0 else 0.0
+        #weapon cool down
+        general_inputs[4] = min(1.0, unit.weapon_cooldown / 5.0)
+        #general_inputs[5] = 1.0 if unit.ground_range > 0.5 or unit.air_range > 0.5 and unit.weapon_cooldown == 0 else 0.0
 
         #nr of enemies facing us?
-        general_inputs[6] = max(unit.enemy_facing_melee / 6.0 , 1.0)
-        general_inputs[7] = max(unit.enemy_facing_range / 12.0 , 1.0)
+        #general_inputs[6] = max(unit.enemy_facing_melee / 6.0 , 1.0)
+        #general_inputs[7] = max(unit.enemy_facing_range / 12.0 , 1.0)
 
 
         enemy : Unit
@@ -282,14 +284,19 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             if enemy.is_hallucination or enemy.type_id in [UnitTypeId.LARVA, UnitTypeId.EGG]:
                 continue
 
+            # Can we attack this enemy?
+            can_attack = unit.can_attack_air if enemy.is_flying else unit.can_attack_ground
+            if not can_attack:
+                continue
+
             enemy_count += 1
 
             network_inputs = np.copy(general_inputs)
-
             #scale priority by enemy hp levels (kill the weaker ones first)
 
             enemy_hp = (enemy.health+enemy.shield)/(max(1,enemy.health_max+enemy.shield_max))
             network_inputs[16] = enemy_hp
+
 
             #Ranged based information:
             dist_to_enemy = unit.distance_to(enemy) - unit.radius - enemy.radius
@@ -309,10 +316,13 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
             network_inputs[20] = 0.0 #reserved
 
-            # How many units is currently already targetting this target
-            #TODO: this should actually be based on what happened last tick?
+            # How many units is currently already targeting this target
+            #TODO: this should actually be based on what happened last tick? (but that won't work well with
+            # Rather count how many units have this as previous target - need memory system implemented first!
             network_inputs[21] = min(enemy.attacking_count_range / 8.0, 1.0)
             network_inputs[22] = min(enemy.attacking_count_melee / 8.0, 1.0)
+
+            # Add here 1.0 if this was it's previously chosen target
             network_inputs[23] = 0.0 #reserved
             network_inputs[24] = 0.0 #reserved
 
@@ -333,7 +343,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             #TODO: for melee units getting blocked can be bad, so consider actual distances
             #USE in batches: self.client.query_pathings()
 
-            #TODO: consider bonus dmg
+            #TODO: bonus damage!!! very important actually!
+
             #TODO: consider preferred attack
             #TODO: enemy static priority
             #TODO: scale by enemy armour
@@ -355,7 +366,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             #TODO: enemy units busy warping in?
 
             #Power comparisons
-            power_diff += enemy.attack_power - unit.enemy_attack_power
+            #power_diff += enemy.attack_power - unit.enemy_attack_power
 
             # Process enemy attack ranges vs our health and our range
             #attack_range = unit.air_range if enemy.is_flying else unit.ground_range
@@ -395,6 +406,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             #TODO: avoid getting one-shot by enemies
 
             #calculate results:
+            #TODO: split between melee/range/air networks!
             outputs = self.attack_network.process(network_inputs)
             priority = outputs[0]
             flee_pri = max(flee_pri, outputs[1])
@@ -411,18 +423,18 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
 
         #Consider fleeing based on power difference
-        power_diff /= enemy_count
-        if power_diff < -0.0: # If power diff is negative we are probably in trouble!
-            #TODO: implement this system on another way?
-            pass
-            #flee_pri -= power_diff
+        #power_diff /= enemy_count
+        #if power_diff < -0.0: # If power diff is negative we are probably in trouble!
+        #    #TODO: implement this system on another way?
+        #    pass
+        #    #flee_pri -= power_diff
 
         #combine flee and run_away:
-        flee_pri = max(flee_pri, run_away_pri)
+        #flee_pri = max(flee_pri, run_away_pri)
 
         #The following units never flee
-        if unit.type_id in [UnitTypeId.LOCUSTMP, UnitTypeId.INFESTEDTERRAN, UnitTypeId.AUTOTURRET] or unit.is_hallucination:
-            flee_pri = 0
+        #if unit.type_id in [UnitTypeId.LOCUSTMP, UnitTypeId.INFESTEDTERRAN, UnitTypeId.AUTOTURRET] or unit.is_hallucination:
+        #    flee_pri = 0
 
         #TODO: fix drones with specialization that they can defend correctly rather than just flee!
         # Drones should only be pulled in correct amounts
@@ -431,29 +443,47 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         if unit.type_id in [UnitTypeId.DRONE, UnitTypeId.SCV, UnitTypeId.PROBE]:
             attack_target = None
 
-        #TODO: if attack target is more than X outside attack range it should count as a move command rather than attack?
 
-        if attack_target and (flee_pri <= 1.0) and (best_pri > 0.0):
-            #print(f"Attacking target : pri = {best_pri}")
+        # For now only attack:
+        if attack_target:
             if self.debug:
-                self.client.debug_line_out(unit, attack_target, (255,50,0))
+                 self.client.debug_line_out(unit, attack_target, (255,50,0))
 
             self.do(unit.attack(attack_target))
 
-
+            #update attack counts on the enemy (this greatly helps with focus fire adjustments)
             if attack_range >= 2.5 or unit.is_flying:  # attacking_count_range
                 attack_target.attacking_count_range += 1
             else:
                 attack_target.attacking_count_melee += 1
 
-        elif flee_pri >= 1.0:
-            #print(f"Fleeing : pri = {flee_pri}")
-            #TODO: improve further - it should probably run away for more than just 1 step
-            #TODO: position improvement should come in here as well?
-            pos = unit.position
-            e_index += 1
-            thread_pos = Point2((np.average(enemy_x[:e_index], weights=enemy_threat[:e_index]), np.average(enemy_y[:e_index],weights=enemy_threat[:e_index])))
-            target_position = pos.towards(thread_pos, -6.0)
-            if self.debug:
-                self.client.debug_line_out(unit, target_position)
-            self.do(unit.move(target_position))
+            #TODO: if weapon_cooldown is zero and enemy is in range then add to enemy a counter of the amount of damage that will be done
+            # TODO: THEN use this to prevent overkill damage!
+
+
+        #TODO: if attack target is more than X outside attack range it should count as a move command rather than attack?
+        #
+        # if attack_target and (flee_pri <= 1.0) and (best_pri > 0.0):
+        #     #print(f"Attacking target : pri = {best_pri}")
+        #     if self.debug:
+        #         self.client.debug_line_out(unit, attack_target, (255,50,0))
+        #
+        #     self.do(unit.attack(attack_target))
+        #
+        #
+        #     if attack_range >= 2.5 or unit.is_flying:  # attacking_count_range
+        #         attack_target.attacking_count_range += 1
+        #     else:
+        #         attack_target.attacking_count_melee += 1
+        #
+        # elif flee_pri >= 1.0:
+        #     #print(f"Fleeing : pri = {flee_pri}")
+        #     #TODO: improve further - it should probably run away for more than just 1 step
+        #     #TODO: position improvement should come in here as well?
+        #     pos = unit.position
+        #     e_index += 1
+        #     thread_pos = Point2((np.average(enemy_x[:e_index], weights=enemy_threat[:e_index]), np.average(enemy_y[:e_index],weights=enemy_threat[:e_index])))
+        #     target_position = pos.towards(thread_pos, -6.0)
+        #     if self.debug:
+        #         self.client.debug_line_out(unit, target_position)
+        #     self.do(unit.move(target_position))
