@@ -49,14 +49,18 @@ class UnitMemory:
 
 
         ##the following is used by the macro system:
-        #for friendlies:
-        self.enemy_in_range_count = 0
-        self.last_attack_target = None
-        #for enemies:
-        self.attacking_previous_melee = 0
-        self.attacking_previous_range = 0
-        self.attack_count_melee = 0
-        self.attack_count_range = 0
+        if unit.is_enemy:
+            #for enemies:
+            self.attacking_previous_melee = 0
+            self.attacking_previous_range = 0
+            self.attack_count_melee = 0
+            self.attack_count_range = 0
+        else:
+            #for friendlies:
+            self.enemy_in_range_count = 0
+            self.last_attack_target = None
+
+            self.radar = np.zeros((8,32)) # used by radar for movement decisions
 
         #both:
         self.can_attack_count = 0

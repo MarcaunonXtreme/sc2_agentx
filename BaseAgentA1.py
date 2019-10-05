@@ -14,7 +14,7 @@ from collections import deque
 
 from sc2.ids.ability_id import AbilityId
 from sc2.ids.upgrade_id import UpgradeId
-from sc2.position import Point2
+from sc2.position import Point2, Point3
 from sc2.units import Units
 from sc2.dicts.upgrade_researched_from import UPGRADE_RESEARCHED_FROM
 from sc2.dicts.unit_trained_from import UNIT_TRAINED_FROM
@@ -791,4 +791,11 @@ class BaseAgentA1(sc2.BotAI):
                 index += 1
 
 
-
+    def draw_debug_line(self, p0: sc2.Union[Unit, Point2], p1: sc2.Union[Unit, Point2], color=None):
+        if isinstance(p0, Unit):
+            p0 = p0.position
+        if isinstance(p1, Unit):
+            p1 = p1.position
+        p0 : Point3 = Point3((p0.x, p0.y, self.get_terrain_z_height(p0)+0.2))
+        p1 : Point3 = Point3((p1.x, p1.y, self.get_terrain_z_height(p1)+0.2))
+        self.client.debug_line_out(p0,p1,color)

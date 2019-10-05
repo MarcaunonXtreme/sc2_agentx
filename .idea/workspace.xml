@@ -14,7 +14,7 @@
         <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/position.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="190">
-              <caret line="303" column="6" selection-start-line="303" selection-start-column="6" selection-end-line="303" selection-end-column="6" />
+              <caret line="305" column="8" selection-start-line="305" selection-start-column="8" selection-end-line="305" selection-end-column="8" />
             </state>
           </provider>
         </entry>
@@ -45,8 +45,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/unit.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="180">
-              <caret line="608" column="8" selection-start-line="608" selection-start-column="8" selection-end-line="608" selection-end-column="8" />
+            <state relative-caret-position="214">
+              <caret line="390" column="27" lean-forward="true" selection-start-line="390" selection-start-column="27" selection-end-line="390" selection-end-column="27" />
               <folding>
                 <element signature="e#0#34#0" expanded="true" />
               </folding>
@@ -57,8 +57,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/MicroAgentC2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="316">
-              <caret line="330" column="52" lean-forward="true" selection-start-line="330" selection-start-column="52" selection-end-line="330" selection-end-column="52" />
+            <state relative-caret-position="292">
+              <caret line="172" lean-forward="true" selection-start-line="172" selection-end-line="172" />
               <folding>
                 <element signature="e#1#11#0" expanded="true" />
               </folding>
@@ -67,10 +67,31 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/BaseAgentA1.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="336">
+              <caret line="790" column="26" lean-forward="true" selection-start-line="790" selection-start-column="26" selection-end-line="790" selection-end-column="26" />
+              <folding>
+                <element signature="e#1#11#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/client.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="190">
+              <caret line="434" column="107" lean-forward="true" selection-start-line="434" selection-start-column="28" selection-end-line="434" selection-end-column="107" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/bot_ai.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3071">
-              <caret line="1313" column="38" lean-forward="true" selection-start-line="1313" selection-start-column="38" selection-end-line="1313" selection-end-column="38" />
+            <state relative-caret-position="190">
+              <caret line="1272" column="8" selection-start-line="1272" selection-start-column="8" selection-end-line="1272" selection-end-column="8" />
             </state>
           </provider>
         </entry>
@@ -78,8 +99,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Memory.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="377">
-              <caret line="59" lean-forward="true" selection-start-line="59" selection-end-line="59" />
+            <state relative-caret-position="343">
+              <caret line="53" column="45" lean-forward="true" selection-start-line="53" selection-start-column="45" selection-end-line="53" selection-end-column="45" />
               <folding>
                 <element signature="e#1#11#0" expanded="true" />
               </folding>
@@ -110,7 +131,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>What now</find>
       <find>Injecting</find>
       <find>damage</find>
       <find>target</find>
@@ -135,11 +155,12 @@
       <find>calculate_wealth</find>
       <find>previous</find>
       <find>unit.values</find>
-      <find>bonus</find>
       <find>cloaked</find>
       <find>last_attack</find>
       <find>value</find>
       <find>attack_count_melee</find>
+      <find>attacking_previous_melee</find>
+      <find>bonus</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -157,13 +178,13 @@
         <option value="$PROJECT_DIR$/test01.py" />
         <option value="$PROJECT_DIR$/test03.py" />
         <option value="$PROJECT_DIR$/TrainableAgent.py" />
-        <option value="$PROJECT_DIR$/BaseAgentA1.py" />
         <option value="$PROJECT_DIR$/dicts/canCloak.py" />
         <option value="$PROJECT_DIR$/dicts/creep.py" />
         <option value="$PROJECT_DIR$/AgentBrain.py" />
         <option value="$PROJECT_DIR$/Training01.py" />
         <option value="$PROJECT_DIR$/MacroAgentB1.py" />
         <option value="$PROJECT_DIR$/Memory.py" />
+        <option value="$PROJECT_DIR$/BaseAgentA1.py" />
         <option value="$PROJECT_DIR$/MicroAgentC2.py" />
       </list>
     </option>
@@ -622,23 +643,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/client.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="7038">
-          <caret line="434" column="8" selection-start-line="434" selection-start-column="8" selection-end-line="434" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/BaseAgentA1.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2414">
-          <caret line="162" column="37" selection-start-line="162" selection-start-column="37" selection-end-line="162" selection-end-column="37" />
-          <folding>
-            <element signature="e#1#11#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/buildOrder.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2754">
@@ -690,13 +694,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/position.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="190">
-          <caret line="303" column="6" selection-start-line="303" selection-start-column="6" selection-end-line="303" selection-end-column="6" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/ids/buff_id.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-1394">
@@ -704,19 +701,12 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/bot_ai.py">
+    <entry file="file://$PROJECT_DIR$/Memory.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3071">
-          <caret line="1313" column="38" lean-forward="true" selection-start-line="1313" selection-start-column="38" selection-end-line="1313" selection-end-column="38" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/unit.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
-          <caret line="608" column="8" selection-start-line="608" selection-start-column="8" selection-end-line="608" selection-end-column="8" />
+        <state relative-caret-position="343">
+          <caret line="53" column="45" lean-forward="true" selection-start-line="53" selection-start-column="45" selection-end-line="53" selection-end-column="45" />
           <folding>
-            <element signature="e#0#34#0" expanded="true" />
+            <element signature="e#1#11#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -740,10 +730,41 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Memory.py">
+    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/unit.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="377">
-          <caret line="59" lean-forward="true" selection-start-line="59" selection-end-line="59" />
+        <state relative-caret-position="214">
+          <caret line="390" column="27" lean-forward="true" selection-start-line="390" selection-start-column="27" selection-end-line="390" selection-end-column="27" />
+          <folding>
+            <element signature="e#0#34#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/position.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="190">
+          <caret line="305" column="8" selection-start-line="305" selection-start-column="8" selection-end-line="305" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/client.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="190">
+          <caret line="434" column="107" lean-forward="true" selection-start-line="434" selection-start-column="28" selection-end-line="434" selection-end-column="107" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/bot_ai.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="190">
+          <caret line="1272" column="8" selection-start-line="1272" selection-start-column="8" selection-end-line="1272" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/BaseAgentA1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="336">
+          <caret line="790" column="26" lean-forward="true" selection-start-line="790" selection-start-column="26" selection-end-line="790" selection-end-column="26" />
           <folding>
             <element signature="e#1#11#0" expanded="true" />
           </folding>
@@ -752,8 +773,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/MicroAgentC2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="316">
-          <caret line="330" column="52" lean-forward="true" selection-start-line="330" selection-start-column="52" selection-end-line="330" selection-end-column="52" />
+        <state relative-caret-position="292">
+          <caret line="172" lean-forward="true" selection-start-line="172" selection-end-line="172" />
           <folding>
             <element signature="e#1#11#0" expanded="true" />
           </folding>

@@ -15,7 +15,7 @@ from collections import deque
 
 from sc2.ids.ability_id import AbilityId
 from sc2.ids.upgrade_id import UpgradeId
-from sc2.position import Point2
+from sc2.position import Point2, Point3
 from sc2.game_data import Cost
 from sc2.units import Units
 
@@ -26,6 +26,45 @@ from MacroAgentB1 import MacroAgentB1
 import AgentBrain
 
 from Memory import Memory, UnitMemory
+
+
+# ^
+# ^
+# y
+#      3 2 1
+#       \|/
+#      4-X-0
+#       /|\
+#      5 6 7
+#  x -->
+
+slice_delta = [
+    (2,0),
+    (1.4, 1.4),
+    (0,2),
+    (-1.4, 1.4),
+    (-2.0, 0),
+    (-1.4, -1.4),
+    (0, -2.0),
+    (1.4, -1.4)
+]
+
+#for the movement algorithm we slice the view up into 8 slices around the unit
+#this function calculate the slice number
+def determine_slice_nr(unit_position : Point2, target : Point2):
+    delta : Point2 = target - unit_position
+
+    #TODO: implement something based on gradient that is faster than atan2 if possible?
+    angle = math.atan2(delta.y, delta.x)
+    angle = round(angle / (math.pi/4))
+    if delta.y >= 0.0:
+        return angle
+    else:
+        angle = 8 - angle
+        return angle if angle < 8 else 0
+
+
+
 
 # This level of the agent takes care of micro type stuff
 class MicroAgentC2(MacroAgentB1, TrainableAgent):
@@ -90,6 +129,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             #unit.attack_power = 0.0
             #enemy_list.append(unit)
 
+
+
         #NOte: if we can modify python-sc2 to insert these in the units list it will make things easier (the static-D)
         for unit in self.enemy_structures.filter(lambda u: (u.can_attack_ground or u.can_attack_air) and u.is_visible):
             mem = self.enemy_memory.see_unit(unit)
@@ -144,9 +185,9 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                         #was target previously?
                         if mem.last_attack_target == enemy.tag:
                             if mem.is_melee:
-                                mem.attacking_previous_melee += 1
+                                enemy.attacking_previous_melee += 1
                             else:
-                                mem.attacking_previous_range += 1
+                                enemy.attacking_previous_range += 1
 
 
                         if enemy.missing == 0:
@@ -454,7 +495,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
         if attack_target and best_pri >= 0.0:
             if self.debug:
-                self.client.debug_line_out(unit, attack_target, (255, 50, 0))
+                self.draw_debug_line(unit, attack_target, (255, 50, 0))
 
             self.do(unit.attack(attack_target))
 
