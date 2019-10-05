@@ -19,7 +19,7 @@ import random
 import numpy as np
 
 
-global_debug = False
+global_debug = True
 
 ###Scenario control:
 ## Ultimately we want to play every scenario at least 6 times (for genetic algorithms)
@@ -27,6 +27,41 @@ global_debug = False
 ## Then three times do that with different pairs of agents
 ## At the end of every scenario:
 ##
+
+
+def calculate_wealth(self):
+    m = 0
+    v = 0
+    for unit in self.units + self.structures:  # type: Unit
+        # only if something can be created: (ie not larva and eggs etc)
+        assert isinstance(unit.type_id, UnitTypeId)
+        item_id = unit.type_id
+        if item_id in [UnitTypeId.EGG, UnitTypeId.LARVA, UnitTypeId.MULE, UnitTypeId.BROODLING, UnitTypeId.CREEPTUMOR,
+                       UnitTypeId.CREEPTUMORBURROWED]:
+            continue
+        if item_id == UnitTypeId.REACTOR:
+            m += 50
+            v += 50
+            continue
+        if item_id == UnitTypeId.TECHLAB:
+            m += 50
+            v += 25
+            continue
+        unit_data = self._game_data.units[item_id.value]
+        creation_ability = unit_data.creation_ability
+        if not creation_ability:
+            continue
+        type_data: UnitTypeData = self.game_data.units.get(item_id.value, None)
+        if not type_data:
+            continue
+        # print(f"Cost {item_id} = {type_data.cost}")
+        m += type_data.cost.minerals
+        v += type_data.cost.vespene
+
+    # print(f"total Wealth = {m} : {v}")
+
+    return m, v
+
 
 class TrainingMaster:
     def __init__(self, nr_brains = 16):
@@ -143,7 +178,7 @@ class TrainingMaster:
         lost_wealth = []
         for agent in self.players:
             agent.setup_stage = 0
-            m, v = agent.calculate_wealth()
+            m, v = calculate_wealth(agent)
             wealth = m + v * 1.5
             #print(f"Player {agent.player_id} end wealth = {wealth}")
             lost_wealth.append(abs(wealth - agent.start_wealth))
@@ -193,8 +228,8 @@ class TrainingMaster:
         else:
             if len(agent.units) < 10:
                 cnt = agent.units.filter(lambda u: u.type_id not in [UnitTypeId.EGG, UnitTypeId.LARVA, UnitTypeId.MULE, UnitTypeId.BROODLING, UnitTypeId.CREEPTUMOR, UnitTypeId.CREEPTUMORBURROWED])
-                if len(cnt) <= 2:
-                    print("Most units lost, ending scenario")
+                if len(cnt) <= 0:
+                    print("Units lost, ending scenario")
                     self.end_scenario_now()
 
 
@@ -343,7 +378,9 @@ class TrainingMaster:
             agent.setup_stage = 100
             # Set unit energy levels
 
-            agent.get_brain().used += 1 # brain is being used now!
+            b = agent.get_brain()
+            if b:
+                b.used += 1 # brain is being used now!
 
             #Disable fast build:
             await agent.client.debug_fast_build()
@@ -356,7 +393,7 @@ class TrainingMaster:
             assert agent.death_struct_tag > 0
 
             #determine start wealth:
-            m, v = agent.calculate_wealth()
+            m, v = calculate_wealth(agent)
             agent.start_wealth = m + v*1.5
             self.end_time = agent.time + 60.0 # 60 seconds is more than enough time for them to do something
             #print(f"player {agent.player_id} scenario start wealth = {agent.start_wealth}")
@@ -365,7 +402,60 @@ class TrainingMaster:
             #GO!
 
 
+class Protagonist(sc2.BotAI, TrainableAgent):
+    def __init__(self, master, *args):
+        super(Protagonist,self).__init__(*args)
+        self.master : TrainingMaster = master
+        self.brain = AgentBrain()
 
+        self.setup_stage = 0
+        self.start_wealth = 1000
+
+        # disable macro and set training mode tactics for now
+        self.disable_macro = True
+        self.debug = global_debug
+
+        self.death_struct_tag = -1
+
+        self.do_it = True
+        self.enemy_location_0 : Point2 = None
+
+    async def on_start(self):
+        self.master.register_player(self)
+        self.enemy_location_0 = self.game_info.map_center
+        await super(Protagonist,self).on_start()
+
+
+    async def on_step(self, iteration: int):
+        if iteration == 0:
+            await self.master.step0_setup(self)
+            self.do_it = True
+            return
+
+        if self.master.setup_in_progress:
+            #setup is in progress
+            await self.master.setup_scenario(self)
+            self.do_it = True
+        else:
+            if self.do_it:
+                self.do_it = True
+                u : Unit
+                for u in self.units:
+                    self.do(u.attack(self.enemy_location_0))
+
+
+
+    async def on_unit_destroyed(self, unit_tag):
+        await super(Protagonist, self).on_unit_destroyed(unit_tag)
+        if unit_tag == self.death_struct_tag:
+            self.death_struct_tag = -1
+
+    #protagonist doesn't have a brain at this stage
+    def use_brain(self, brain : AgentBrain):
+        pass
+    def get_brain(self) -> AgentBrain:
+        # Fake brain just to make the trained happy
+        return self.brain
 
 #this class can inherit anything but must eventually inherit sc2.BotAI to be a bot
 class BotInTraining(MicroAgentC2):
@@ -409,38 +499,6 @@ class BotInTraining(MicroAgentC2):
             self.death_struct_tag = -1
 
 
-    def calculate_wealth(self):
-        m = 0
-        v = 0
-        for unit in self.units + self.structures: #type: Unit
-            #only if something can be created: (ie not larva and eggs etc)
-            assert isinstance(unit.type_id, UnitTypeId)
-            item_id = unit.type_id
-            if item_id in [UnitTypeId.EGG, UnitTypeId.LARVA, UnitTypeId.MULE, UnitTypeId.BROODLING, UnitTypeId.CREEPTUMOR, UnitTypeId.CREEPTUMORBURROWED]:
-                continue
-            if item_id == UnitTypeId.REACTOR:
-                m += 50
-                v += 50
-                continue
-            if item_id == UnitTypeId.TECHLAB:
-                m += 50
-                v += 25
-                continue
-            unit_data = self._game_data.units[item_id.value]
-            creation_ability = unit_data.creation_ability
-            if not creation_ability:
-                continue
-            type_data : UnitTypeData = self.game_data.units.get(item_id.value, None)
-            if not type_data:
-                continue
-            #print(f"Cost {item_id} = {type_data.cost}")
-            m += type_data.cost.minerals
-            v += type_data.cost.vespene
-
-        #print(f"total Wealth = {m} : {v}")
-
-        return m,v
-
 
 
 
@@ -458,5 +516,5 @@ the_master = TrainingMaster()
 
 run_game(maps.get("Flat96"), [
     Bot(Race.Terran, BotInTraining(the_master)),
-    Bot(Race.Terran, BotInTraining(the_master)),
+    Bot(Race.Terran, Protagonist(the_master)),
 ], realtime=global_debug)
