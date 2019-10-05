@@ -9,6 +9,7 @@ import numpy as np
 
 from dicts.canCloak import CAN_CLOAK
 
+from sc2.dicts.unit_unit_alias import UNIT_UNIT_ALIAS
 
 #TODO: consider blips
 #TODO: consider snapshots
@@ -20,17 +21,23 @@ class UnitMemory:
 
         self.unit = unit
         self.tag = unit.tag
-        self.type_id = unit.type_id
+        self.type_id = UNIT_UNIT_ALIAS.get(unit.type_id, unit.type_id)
         self.position : Point2 = unit.position
 
+        self.is_melee = max(unit.air_range, unit.ground_range) > 2.0
+
+        self.radius = unit.radius
         self.speed2 = 0
         self.health = unit.health
         self.shield = unit.shield
         self.lost_hp = 0
         self.lost_shield = 0
+
         self.ignore_count = 0
         self.group_id = None
-        self.last_attack_target = None
+
+        self.glass_cannon_ratio = max(unit.ground_dps, unit.air_dps) / ((unit.health_max + unit.shield_max)*(1.0 + 0.1*unit.armor))
+
         self.is_enemy = unit.is_enemy
         if unit.is_enemy:
             self.missing = 0 #How many ticks unit was not-seen
@@ -39,6 +46,24 @@ class UnitMemory:
             self.energy_max = unit.energy_max
             self.delta_position: Point2 = Point2((0, 0)) #delta_position is used to propagate position when enemy is hidden/cloaked
             self.is_cloaked = unit.is_cloaked
+
+
+        ##the following is used by the macro system:
+        #for friendlies:
+        self.enemy_in_range_count = 0
+        self.last_attack_target = None
+        #for enemies:
+        self.attacking_previous_melee = 0
+        self.attacking_previous_range = 0
+        self.attack_count_melee = 0
+        self.attack_count_range = 0
+
+        #both:
+        self.can_attack_count = 0
+        #unit.attacking_count_melee = 0
+        # unit.attacking_count_range = 0
+        # unit.can_attack_count = 0
+        # unit.attack_power = 0.0
 
 
     def update(self, unit : Unit):
@@ -58,7 +83,9 @@ class UnitMemory:
             self.is_cloaked = unit.is_cloaked
             self.missing = 0
             self.energy = min(self.energy_max, self.energy + 0.7875/11) #TODO: make this a constant defined
+            #TODO: track temporary unit life-time to predict when they will go away
         self.position = unit.position
+
 
     #update a enemy unit that is no longer visible
     def update_memory(self):
@@ -73,6 +100,10 @@ class UnitMemory:
 class Memory:
     def __init__(self):
         self.units = {}
+
+    @property
+    def values(self):
+        return self.units.values()
 
     def start_tick(self):
         for u in self.units.values():

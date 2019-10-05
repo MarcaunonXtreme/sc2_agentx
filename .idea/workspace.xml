@@ -13,8 +13,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/position.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="153">
-              <caret line="29" column="26" selection-start-line="29" selection-start-column="8" selection-end-line="29" selection-end-column="26" />
+            <state relative-caret-position="190">
+              <caret line="303" column="6" selection-start-line="303" selection-start-column="6" selection-end-line="303" selection-end-column="6" />
             </state>
           </provider>
         </entry>
@@ -45,8 +45,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/unit.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3104">
-              <caret line="420" column="71" selection-start-line="420" selection-start-column="66" selection-end-line="420" selection-end-column="71" />
+            <state relative-caret-position="180">
+              <caret line="608" column="8" selection-start-line="608" selection-start-column="8" selection-end-line="608" selection-end-column="8" />
               <folding>
                 <element signature="e#0#34#0" expanded="true" />
               </folding>
@@ -57,8 +57,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/MicroAgentC2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="272">
-              <caret line="272" lean-forward="true" selection-start-line="272" selection-end-line="272" />
+            <state relative-caret-position="316">
+              <caret line="330" column="52" lean-forward="true" selection-start-line="330" selection-start-column="52" selection-end-line="330" selection-end-column="52" />
               <folding>
                 <element signature="e#1#11#0" expanded="true" />
               </folding>
@@ -67,10 +67,19 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
+        <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/bot_ai.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="3071">
+              <caret line="1313" column="38" lean-forward="true" selection-start-line="1313" selection-start-column="38" selection-end-line="1313" selection-end-column="38" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Memory.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="51">
-              <caret line="11" selection-start-line="11" selection-end-line="11" />
+            <state relative-caret-position="377">
+              <caret line="59" lean-forward="true" selection-start-line="59" selection-end-line="59" />
               <folding>
                 <element signature="e#1#11#0" expanded="true" />
               </folding>
@@ -101,12 +110,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>larva</find>
-      <find>can_attack</find>
-      <find>PRISMATIC</find>
-      <find>self.workers.appen</find>
-      <find>range</find>
-      <find>flying</find>
       <find>What now</find>
       <find>Injecting</find>
       <find>damage</find>
@@ -130,7 +133,13 @@
       <find>end_time</find>
       <find>get_brain</find>
       <find>calculate_wealth</find>
+      <find>previous</find>
+      <find>unit.values</find>
       <find>bonus</find>
+      <find>cloaked</find>
+      <find>last_attack</find>
+      <find>value</find>
+      <find>attack_count_melee</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -151,10 +160,10 @@
         <option value="$PROJECT_DIR$/BaseAgentA1.py" />
         <option value="$PROJECT_DIR$/dicts/canCloak.py" />
         <option value="$PROJECT_DIR$/dicts/creep.py" />
-        <option value="$PROJECT_DIR$/Memory.py" />
         <option value="$PROJECT_DIR$/AgentBrain.py" />
         <option value="$PROJECT_DIR$/Training01.py" />
         <option value="$PROJECT_DIR$/MacroAgentB1.py" />
+        <option value="$PROJECT_DIR$/Memory.py" />
         <option value="$PROJECT_DIR$/MicroAgentC2.py" />
       </list>
     </option>
@@ -354,13 +363,6 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://F:/Anaconda3/envs/sc2/Lib/importlib/_bootstrap.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="266">
-          <caret line="218" selection-start-line="218" selection-end-line="218" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/cache.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="130">
@@ -661,39 +663,12 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Memory.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="51">
-          <caret line="11" selection-start-line="11" selection-end-line="11" />
-          <folding>
-            <element signature="e#1#11#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/AgentBrain.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="136">
           <caret line="76" column="13" selection-start-line="76" selection-start-column="13" selection-end-line="76" selection-end-column="13" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/bot_ai.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="198">
-          <caret line="1516" column="14" selection-start-line="1516" selection-start-column="14" selection-end-line="1516" selection-end-column="14" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/TrainableAgent.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="6" selection-start-line="6" selection-end-line="6" />
-          <folding>
-            <element signature="e#3#36#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -708,20 +683,51 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/dicts/unit_unit_alias.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="12" selection-start-line="12" selection-end-line="12" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/position.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="190">
+          <caret line="303" column="6" selection-start-line="303" selection-start-column="6" selection-end-line="303" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/ids/buff_id.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1394">
+          <caret line="6" column="6" selection-start-line="6" selection-start-column="6" selection-end-line="6" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/bot_ai.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3071">
+          <caret line="1313" column="38" lean-forward="true" selection-start-line="1313" selection-start-column="38" selection-end-line="1313" selection-end-column="38" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/unit.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3104">
-          <caret line="420" column="71" selection-start-line="420" selection-start-column="66" selection-end-line="420" selection-end-column="71" />
+        <state relative-caret-position="180">
+          <caret line="608" column="8" selection-start-line="608" selection-start-column="8" selection-end-line="608" selection-end-column="8" />
           <folding>
             <element signature="e#0#34#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/position.py">
+    <entry file="file://$PROJECT_DIR$/TrainableAgent.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="153">
-          <caret line="29" column="26" selection-start-line="29" selection-start-column="8" selection-end-line="29" selection-end-column="26" />
+        <state relative-caret-position="102">
+          <caret line="6" selection-start-line="6" selection-end-line="6" />
+          <folding>
+            <element signature="e#3#36#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -734,10 +740,20 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/Memory.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="377">
+          <caret line="59" lean-forward="true" selection-start-line="59" selection-end-line="59" />
+          <folding>
+            <element signature="e#1#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/MicroAgentC2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="272">
-          <caret line="272" lean-forward="true" selection-start-line="272" selection-end-line="272" />
+        <state relative-caret-position="316">
+          <caret line="330" column="52" lean-forward="true" selection-start-line="330" selection-start-column="52" selection-end-line="330" selection-end-column="52" />
           <folding>
             <element signature="e#1#11#0" expanded="true" />
           </folding>

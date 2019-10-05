@@ -40,12 +40,14 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         self.tactic = MicroAgentC2.TACTIC_DEFEND
         self.defend_locations = []
         #TODO: deprecate this completely in favour of the memory system!
-        self.previous_hp = {} #unit_tag : previous_HP (friendly units only)
         self.iteration = -1
         self.delta_step_time = 1.0
         self.brain : AgentBrain.AgentBrain = None
         self.attack_network : AgentBrain.Network = None
         self.flee_network : AgentBrain.Network = None
+
+        self.enemy_memory : Memory = Memory()
+        self.friendly_memory : Memory = Memory()
 
     def get_brain(self) -> AgentBrain:
         return self.brain
@@ -69,25 +71,42 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         #if self.tactic == MicroAgentC1.TACTIC_ATTACK:
         #    time.sleep(150e-3)
 
-        #Make a list of all enemies (units and static-D)
-        enemy_list = Units([], self) #enemies that can attack ground
-        # TODO: air_enemies! #enemies that can attack air
+        #Make a list of all enemies (units and structures)
+        # TODO: filter units into tiles so that the loops only search through local units!?
+        self.enemy_memory.start_tick()
+        self.friendly_memory.start_tick()
+
         unit : Unit
         for unit in self.enemy_units.filter(lambda u: u.type_id not in [UnitTypeId.EGG, UnitTypeId.LARVA]):
-            unit.attacking_count_melee = 0
-            unit.attacking_count_range = 0
-            unit.can_attack_count = 0
-            unit.attack_power = 0.0
+            mem = self.enemy_memory.see_unit(unit)
 
-            enemy_list.append(unit)
+            mem.can_attack_count = 0
+
+            mem.attack_count_melee = 0
+            mem.attack_count_range = 0
+            #unit.attacking_count_melee = 0
+            #unit.attacking_count_range = 0
+            #unit.can_attack_count = 0
+            #unit.attack_power = 0.0
+            #enemy_list.append(unit)
+
+        #NOte: if we can modify python-sc2 to insert these in the units list it will make things easier (the static-D)
         for unit in self.enemy_structures.filter(lambda u: (u.can_attack_ground or u.can_attack_air) and u.is_visible):
+            mem = self.enemy_memory.see_unit(unit)
 
-            unit.attacking_count_melee = 0
-            unit.attacking_count_range = 0
-            unit.can_attack_count = 0
-            unit.attack_power = 0.0
+            mem.can_attack_count = 0
 
-            enemy_list.append(unit)
+            mem.attack_count_melee = 0
+            mem.attack_count_range = 0
+
+            #unit.attacking_count_melee = 0
+            #unit.attacking_count_range = 0
+            #unit.can_attack_count = 0
+            #unit.attack_power = 0.0
+
+            #enemy_list.append(unit)
+
+        self.enemy_memory.process_missing_enemy_units(self)
 
         #Find defend locations
         if iteration % 3 == 0:
@@ -104,96 +123,133 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         ### can_attack_count : float - more or less how many friendly units can attack this enemy
         ### attack_power : float - a number indicating the "power projection" against this eney
         #_unit_mod = iteration % 3
-        for i,unit in enumerate(self.units):
+        #TODO: my own static-D?! (especially for zerg)
+
+        for unit in self.units:
             if unit.type_id not in [UnitTypeId.BROODLING, UnitTypeId.LARVA, UnitTypeId.EGG, UnitTypeId.MULE]:
-                unit.got_enemies = False
-                unit.enemy_can_attack_count = 0.0
-                unit.enemy_attack_power = 0.0
-                unit.enemy_facing_range = 0.0
-                unit.enemy_facing_melee = 0.0
 
-                # TODO: currently need to check ALL enemy units. Using buckets over the map will make this much faster
+                mem : UnitMemory = self.friendly_memory.see_unit(unit)
 
-                # TODO: in time need to increase this to 15.0 but for now this is simpler
-                got_enemies = False
-                if enemy_list:
-                    enemy : Unit
-                    for enemy in enemy_list.closer_than(10.0, unit):
-                        got_enemies = True
+                if not unit.is_active:
+                    continue
 
-                        #TODO: need to check if CAN actually attack!
-                        #TODO: should maybe look more than 1 second ahead in distance?
-                        # Check if we can attack it?
-                        dist_to_enemy = unit.distance_to(enemy) - unit.radius - enemy.radius
-                        attack_range = unit.air_range if enemy.is_flying else unit.ground_range
-                        attack_dps = unit.air_dps if enemy.is_flying else unit.ground_dps
-                        enemy_attack_range = enemy.air_range if unit.is_flying else enemy.ground_range
-                        enemy_dps = enemy.air_dps if unit.is_flying else enemy.ground_dps
+                mem.enemy_in_range_count = 0
+                mem.can_attack_count = 0
 
-                        ratio = 1.0 / max(1.0, 1.0 + (dist_to_enemy-attack_range)*5.0/max(unit.movement_speed,1.0))
-                        enemy.can_attack_count += ratio
+                enemy : UnitMemory
+                for enemy in self.enemy_memory.values:
+                    if unit.position._distance_squared(enemy.position) < 100.0:
+                        mem.enemy_in_range_count += 1
 
-                        enemy_ratio = 1.0 / max(1.0, 1.0 + (dist_to_enemy-enemy_attack_range)*2.5/max(enemy.movement_speed,1.0))
-                        unit.enemy_can_attack_count += enemy_ratio
-
-                        angle = math.atan2(unit.position.y - enemy.position.y , unit.position.x - enemy.position.x) - enemy.facing
-                        angle = min(math.fabs(angle), math.fabs(angle - math.pi*2))
-                        if angle < 0.020: #Not sure how find to make this
-                            if enemy_attack_range < 2.5:
-                                unit.enemy_facing_melee += ratio
+                        #was target previously?
+                        if mem.last_attack_target == enemy.tag:
+                            if mem.is_melee:
+                                mem.attacking_previous_melee += 1
                             else:
-                                unit.enemy_facing_range += ratio
+                                mem.attacking_previous_range += 1
 
 
-                        #TODO: this still ignores energy levels!
-                        #TODO: this still ignores armour!
-                        #TODO: still ignore upgrades!
-                        #TODO: still ignore creep!
-                        #TODO: enemies on high ground is more dangerous - also enemies behind chokes like ramps
-                        #TODO: still ignore special offsets. example a stalker with blink is worth more. baneling splash is worth more etc.
-                        #TODO: the linear scaling of movement_speed and attack_range separately isn't the best unfortunately!
-                        #TODO: does not consider upgrades/buffs and all that!
-                        #
-                        # power_scale = 1.0
-                        # power_scale /= max(1.0, 1.0 + (dist_to_enemy-attack_range*1.2-unit.movement_speed*1.2+4.0)*0.5/max(0.5, unit.movement_speed))
-                        # power_scale *= min(2.5, max(1.0, unit.movement_speed/max(0.1,enemy.movement_speed)))
-                        # if unit.movement_speed - enemy.movement_speed > 0.1: #Not ideal but not sure how to scale this better currently
-                        #     power_scale *= min(2.5, max(1.0, attack_range / max(0.1,enemy_attack_range)))
-                        # if attack_range < 2.0:
-                        #     power_scale *= min(3.0, max(1.0, enemy.radius / unit.radius))
-                        # power = (unit.health + unit.shield) * attack_dps
-                        # enemy.attack_power += power * power_scale * 0.001
-                        #
-                        #
-                        # enemy_power_scale = 1.0
-                        # enemy_power_scale /= max(1.0, 1.0 + (dist_to_enemy-enemy_attack_range*1.2-enemy.movement_speed*1.2+4.0)*0.5/max(1.0, enemy.movement_speed))
-                        # enemy_power_scale *= min(2.5, max(1.0, enemy.movement_speed/ max(0.1,unit.movement_speed)))
-                        # if enemy.movement_speed - unit.movement_speed > 0.1:
-                        #     enemy_power_scale *= min(2.5, max(1.0, enemy_attack_range / max(0.1,attack_range)))
-                        # if enemy_attack_range < 2.0:
-                        #     power_scale *= min(3.0, max(1.0, unit.radius / enemy.radius))
-                        # enemy_power = (enemy.health + enemy.shield) * enemy_dps
-                        # unit.enemy_attack_power += enemy_power * enemy_power_scale * 0.001 * 0.9 #The 0.9 factor is an optimism factor that reduce enemy power level
+                        if enemy.missing == 0:
+                            dist_to_enemy = unit.distance_to(enemy.position) - unit.radius - enemy.radius
+                            attack_range = unit.air_range if enemy.unit.is_flying else unit.ground_range
+                            #enemy_attack_range = enemy.unit.air_range if unit.is_flying else enemy.unit.ground_range
 
-                        # TODO: a lot
+                            #Update can_attack_count - useful for managing attack priorities
+                            ratio = 1.0 / max(1.0, 1.0 + (dist_to_enemy - attack_range) * 5.0 / max(unit.movement_speed, 1.0))
+                            enemy.can_attack_count += ratio
 
-                unit.got_enemies = got_enemies
+
+        #delete memory of any friendly units that died previously (can maybe do this via a callback??)
+        self.friendly_memory.process_missing_friendly_units()
+
+        #
+        # for i,unit in enumerate(self.units):
+        #     if unit.type_id not in [UnitTypeId.BROODLING, UnitTypeId.LARVA, UnitTypeId.EGG, UnitTypeId.MULE]:
+        #         unit.got_enemies = False
+        #         unit.enemy_can_attack_count = 0.0
+        #         unit.enemy_attack_power = 0.0
+        #         unit.enemy_facing_range = 0.0
+        #         unit.enemy_facing_melee = 0.0
+        #
+        #         # TODO: currently need to check ALL enemy units. Using buckets over the map will make this much faster
+        #
+        #         # TODO: in time need to increase this to 15.0 but for now this is simpler
+        #         got_enemies = False
+        #         if enemy_list:
+        #             enemy : Unit
+        #             for enemy in enemy_list.closer_than(10.0, unit):
+        #                 got_enemies = True
+        #
+        #                 #TODO: need to check if CAN actually attack!
+        #                 #TODO: should maybe look more than 1 second ahead in distance?
+        #                 # Check if we can attack it?
+        #                 dist_to_enemy = unit.distance_to(enemy) - unit.radius - enemy.radius
+        #                 attack_range = unit.air_range if enemy.is_flying else unit.ground_range
+        #                 attack_dps = unit.air_dps if enemy.is_flying else unit.ground_dps
+        #                 enemy_attack_range = enemy.air_range if unit.is_flying else enemy.ground_range
+        #                 enemy_dps = enemy.air_dps if unit.is_flying else enemy.ground_dps
+        #
+        #                 ratio = 1.0 / max(1.0, 1.0 + (dist_to_enemy-attack_range)*5.0/max(unit.movement_speed,1.0))
+        #                 enemy.can_attack_count += ratio
+        #
+        #                 enemy_ratio = 1.0 / max(1.0, 1.0 + (dist_to_enemy-enemy_attack_range)*2.5/max(enemy.movement_speed,1.0))
+        #                 unit.enemy_can_attack_count += enemy_ratio
+        #
+        #                 angle = math.atan2(unit.position.y - enemy.position.y , unit.position.x - enemy.position.x) - enemy.facing
+        #                 angle = min(math.fabs(angle), math.fabs(angle - math.pi*2))
+        #                 if angle < 0.020: #Not sure how find to make this
+        #                     if enemy_attack_range < 2.5:
+        #                         unit.enemy_facing_melee += ratio
+        #                     else:
+        #                         unit.enemy_facing_range += ratio
+        #
+        #
+        #                 #TODO: this still ignores energy levels!
+        #                 #TODO: this still ignores armour!
+        #                 #TODO: still ignore upgrades!
+        #                 #TODO: still ignore creep!
+        #                 #TODO: enemies on high ground is more dangerous - also enemies behind chokes like ramps
+        #                 #TODO: still ignore special offsets. example a stalker with blink is worth more. baneling splash is worth more etc.
+        #                 #TODO: the linear scaling of movement_speed and attack_range separately isn't the best unfortunately!
+        #                 #TODO: does not consider upgrades/buffs and all that!
+        #                 #
+        #                 # power_scale = 1.0
+        #                 # power_scale /= max(1.0, 1.0 + (dist_to_enemy-attack_range*1.2-unit.movement_speed*1.2+4.0)*0.5/max(0.5, unit.movement_speed))
+        #                 # power_scale *= min(2.5, max(1.0, unit.movement_speed/max(0.1,enemy.movement_speed)))
+        #                 # if unit.movement_speed - enemy.movement_speed > 0.1: #Not ideal but not sure how to scale this better currently
+        #                 #     power_scale *= min(2.5, max(1.0, attack_range / max(0.1,enemy_attack_range)))
+        #                 # if attack_range < 2.0:
+        #                 #     power_scale *= min(3.0, max(1.0, enemy.radius / unit.radius))
+        #                 # power = (unit.health + unit.shield) * attack_dps
+        #                 # enemy.attack_power += power * power_scale * 0.001
+        #                 #
+        #                 #
+        #                 # enemy_power_scale = 1.0
+        #                 # enemy_power_scale /= max(1.0, 1.0 + (dist_to_enemy-enemy_attack_range*1.2-enemy.movement_speed*1.2+4.0)*0.5/max(1.0, enemy.movement_speed))
+        #                 # enemy_power_scale *= min(2.5, max(1.0, enemy.movement_speed/ max(0.1,unit.movement_speed)))
+        #                 # if enemy.movement_speed - unit.movement_speed > 0.1:
+        #                 #     enemy_power_scale *= min(2.5, max(1.0, enemy_attack_range / max(0.1,attack_range)))
+        #                 # if enemy_attack_range < 2.0:
+        #                 #     power_scale *= min(3.0, max(1.0, unit.radius / enemy.radius))
+        #                 # enemy_power = (enemy.health + enemy.shield) * enemy_dps
+        #                 # unit.enemy_attack_power += enemy_power * enemy_power_scale * 0.001 * 0.9 #The 0.9 factor is an optimism factor that reduce enemy power level
+        #
+        #                 # TODO: a lot
+        #
+        #         unit.got_enemies = got_enemies
 
 
         #process units - main cycle
-        for i,unit in enumerate(self.units):
-            if unit.type_id not in [UnitTypeId.BROODLING, UnitTypeId.LARVA, UnitTypeId.EGG, UnitTypeId.MULE]:
-
-                if unit.got_enemies:
-                    await self.process_micro_unit(unit, enemy_list)
-                else:
-                    self.previous_hp[unit.tag] = (unit.health+unit.shield)/(unit.health_max+unit.shield_max)
-                    #No enemies in range, switching to tactics
-                    self.process_micro_unit_tactics(unit)
+        for mem in self.friendly_memory.values:
+            if mem.enemy_in_range_count > 0:
+                await self.process_micro_unit(mem)
+            else:
+                self.process_unit_tactics(mem.unit)
 
 
 
-    def process_micro_unit_tactics(self, unit : Unit):
+
+    def process_unit_tactics(self, unit : Unit):
 
         if unit.type_id in [UnitTypeId.DRONE, UnitTypeId.SCV, UnitTypeId.PROBE, UnitTypeId.OVERLORD]:
             #These units don't do tactics
@@ -223,8 +279,199 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             raise NotImplementedError
 
 
+    async def process_micro_unit(self, mem : UnitMemory):
+        unit : Unit = mem.unit
 
-    async def process_micro_unit(self, unit : Unit, enemy_list : Units):
+        if not unit.is_active:
+            return
+        if mem.ignore_count > 0:
+            mem.ignore_count -= 1
+            return
+
+        attack_target : Unit = None
+        attack_target_mem :UnitMemory = None
+        best_pri = -1.0
+
+        # TODO: deal with OL using a different "process" in time - specialization! (this is just a stop-gap)
+        if unit.type_id is UnitTypeId.OVERLORD:
+            # non-attacking
+            from_enemy = self.enemy_units.closest_to(unit)
+            pos: Point2 = unit.position
+            target_position = pos.towards(from_enemy, -5.0)
+            self.do(unit.move(target_position))
+            return
+
+        unit_hp = (unit.health + unit.shield) / (unit.health_max + unit.shield_max)
+
+        #First create the general inputs that helps the unit decide against ALL enemies
+        general_inputs = np.zeros(42)
+        general_inputs[0] = unit_hp
+        general_inputs[1] = 1.0 if unit.is_cloaked or unit.is_burrowed else 0.0
+        general_inputs[2] = min(1.0, mem.speed2 / 6.0)
+        if self.is_zerg:
+            general_inputs[3] = 1.0 if self.has_creep(unit) else 0.0
+
+        general_inputs[4] = min(1.0, unit.weapon_cooldown / 5.0)
+
+        general_inputs[5] = unit.energy / 200.0
+
+
+        #This loop is to decide on attack targets
+        enemy_mem : UnitMemory
+        for enemy_mem in self.enemy_memory.values:
+            if enemy_mem.missing:
+                #only consider currently visible enemy units for attack targets
+                #The rest are used for flee/move/tactics
+                continue
+            enemy : Unit = enemy_mem.unit
+            if enemy.is_hallucination or enemy.is_snapshot or enemy.is_blip or not enemy.is_visible:
+                #attacking these is useless?
+                continue
+
+            network_inputs = np.copy(general_inputs)
+
+            enemy_hp = (enemy.health + enemy.shield) / (max(1, enemy.health_max + enemy.shield_max))
+            network_inputs[8] = enemy_hp
+
+            #Ranged based information:
+            dist_to_enemy = unit.distance_to(enemy) - unit.radius - enemy.radius
+            attack_range = unit.air_range if enemy.is_flying else unit.ground_range
+            if attack_range <= 0 or dist_to_enemy >= 10.0: #TODO: make this 15.0!
+                continue #can't attack this enemy
+            #TODO: there is a range related to dist and speed where we don't consider an enemy for attack anymore even if within 15.0 units??
+
+            enemy_attack_range = enemy.air_range if unit.is_flying else enemy.ground_range
+            #dps = unit.air_dps if enemy.is_flying else unit.ground_dps
+            #enemy_dps = enemy.air_dps if unit.is_flying else enemy.ground_dps
+
+            #enemy already in range
+            network_inputs[8] = 1.0 if dist_to_enemy <= attack_range else 0.0
+            # 1.0 if enemy is in range, else scales down towards 0.0 based on this units speed
+            network_inputs[9] = 1.0 / max(1.0, 1.0 + (dist_to_enemy - attack_range)/max(0.1, unit.movement_speed) )
+            # The reverse for the enemy
+            network_inputs[10] = 1.0 / max(1.0, 1.0 + (dist_to_enemy - enemy_attack_range)/max(0.1, enemy.movement_speed) )
+
+            #How many of our units can attack this unit more or less?
+            network_inputs[11] = min(enemy_mem.can_attack_count / 8.0, 1.0)
+            #How many targeted this previously?
+            network_inputs[12] = min(enemy_mem.attacking_previous_range / 8.0, 1.0)
+            network_inputs[13] = min(enemy_mem.attacking_previous_melee / 8.0, 1.0)
+            #How many is targeting it this tick?
+            network_inputs[14] = min(enemy_mem.attack_count_range / 8.0, 1.0)
+            network_inputs[15] = min(enemy_mem.attack_count_melee / 8.0, 1.0)
+
+            #movement speed and attack range comparisons:
+            network_inputs[16] = np.clip((unit.movement_speed - enemy.movement_speed) / 5.0, -1.0, 1.0)
+            network_inputs[17] = np.clip((attack_range - enemy_attack_range) / 5.0, -1.0, 1.0)
+
+            #this is a ratio of how easily it is theoretically to escape enemy attack range
+            network_inputs[18] = np.clip(1.0 - ((enemy_attack_range - dist_to_enemy) / max(0.1, unit.movement_speed)) , 0.0, 1.0)
+            #TODO: how easily for enemy to escape us?
+
+            #ratio of radius:
+            network_inputs[20] = np.clip((unit.radius - enemy.radius)/2.0 , -1.0, 1.0)
+
+            #Base on "close" range: 1.0=next to us, 0.0=8+ away
+            network_inputs[21] = max(1.0 - dist_to_enemy / 8.0 , 0.0)
+
+            #Is the unit lower or higher than us?
+            network_inputs[21] = np.clip(unit.position3d.z - enemy.position3d.z, -1.0, 1.0)
+
+            #energy
+            network_inputs[22] = enemy.energy / 200.0
+
+            #cloaked?
+            network_inputs[23] = 1.0 if enemy.is_cloaked or enemy.is_burrowed else 0.0
+
+            #some other tags
+            network_inputs[25] = 1.0 if enemy.is_ready else 0.0
+            network_inputs[26] = 1.0 if enemy.is_detector else 0.0
+            network_inputs[24] = 1.0 if enemy.cargo_max > 0 else 0.0
+            network_inputs[25] = 1.0 if enemy.is_flying else 0.0
+            network_inputs[26] = 1.0 if enemy_mem.is_melee else 0.0
+
+            network_inputs[27] = min(1.0, enemy.buff_duration_remain / 22.0)
+
+            #enemy sight range?
+            network_inputs[28] = 0.0 # unsure about this?
+
+            #Banelings is a special case against light units
+            network_inputs[29] = 0.5 if enemy_mem.type_id is UnitTypeId.BANELING and unit.is_light and not unit.is_flying else 0.0
+
+            #A ratio of the units dps / units_ehp
+            network_inputs[30] = enemy_mem.glass_cannon_ratio
+
+            #was attack target last time? (this helps to stabilize the system a bit, like hysteresis)
+            network_inputs[31] = 0.5 if enemy.tag == mem.last_attack_target else 0.0
+
+            #TODO: aoe units?
+
+            #TODO: temporary units?
+
+            #TODO: actual damage?
+            # TODO: scale by enemy armour
+
+
+
+            #TODO: enemy static priority?
+            # TODO: enemy static priority
+
+            #TODO: prevent overkill?
+            #TODO: applied damage to prevent overkill
+
+
+            #TODO: for melee units getting blocked can be bad, so consider actual distances,blocks? (move?)
+            #USE in batches: self.client.query_pathings()
+
+            #TODO: bonus damage!!! very important actually!
+
+
+
+            # TODO: scale this differently based on various other factors THIS IS WAY TOO SIMPLE AND STUPID!!
+            # TODO: too many melee units trying to attack an enemy is not good, how to scale this?
+
+            #TODO: scale for enemy units that is about to expire
+            #TODO: enemy units busy warping in?
+
+            #calculate results:
+            #TODO: split between melee/range/air networks!
+            outputs = self.attack_network.process(network_inputs)
+            priority = outputs[0]
+
+            if priority > best_pri:
+                best_pri = priority
+                attack_target = enemy
+                attack_target_mem = enemy_mem
+
+        # TODO: fix drones with specialization that they can defend correctly rather than just flee!
+        # Drones should only be pulled in correct amounts
+        # Drones should never leave the base area, should always want to return to mining asap
+        # Drones should only flee if really in danger also, prefer mining even if semi dangerous
+        if unit.type_id in [UnitTypeId.DRONE, UnitTypeId.SCV, UnitTypeId.PROBE]:
+            attack_target = None
+
+        # For now only attack:
+
+        if attack_target and best_pri >= 0.0:
+            if self.debug:
+                self.client.debug_line_out(unit, attack_target, (255, 50, 0))
+
+            self.do(unit.attack(attack_target))
+
+            #update last_attack target for next round
+            mem.last_attack_target = attack_target.tag
+
+            # update attack counts on the enemy (this greatly helps with focus fire adjustments)
+            if mem.is_melee:  # attacking_count_range
+                attack_target_mem.attack_count_melee += 1
+            else:
+                attack_target_mem.attack_count_range += 1
+
+            # TODO: if weapon_cooldown is zero and enemy is in range then add to enemy a counter of the amount of damage that will be done
+            # TODO: THEN use this to prevent overkill damage!
+
+
+    async def process_micro_unit_old(self, unit : Unit, enemy_list : Units):
         attack_target = None
         best_pri = -1.0
         flee_pri = -1.0 # If this ends up positive normally the unit will attempt to flee
@@ -251,13 +498,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
 
         unit_hp = (unit.health+unit.shield)/(unit.health_max+unit.shield_max)
-        prev_hp = self.previous_hp.get(unit.tag, 1.0)
-        lost_hp = prev_hp - unit_hp
-        if self.iteration % 4 == 0: #TODO: scale this by game_step setup? - this determine hp loss memory!
-            self.previous_hp[unit.tag] = unit_hp
 
-        if unit.health_percentage > 0.5:
-            lost_hp *= 0.5 # If unit still positive health reduce effect of health lost
 
         general_inputs = np.zeros(42)
         general_inputs[0] = unit_hp
