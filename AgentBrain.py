@@ -45,7 +45,7 @@ class Network:
         return tmp
 
 
-    def mutate(self, factor1 = 0.25, factor2 = 0.2):
+    def mutate(self, factor1 = 0.05, factor2 = 0.20):
         self._mutate_a(self.w0,factor1,factor2)
         self._mutate_a(self.b0, factor1, factor2)
         self._mutate_a(self.w1, factor1, factor2)
@@ -108,7 +108,7 @@ class AgentBrain:
             print("Failed to load, creating new Brain")
             return AgentBrain(filename)
 
-    def mutate(self, factor1 = 0.20, factor2 = 0.20 ):
+    def mutate(self, factor1 = 0.05, factor2 = 0.20 ):
         print("Mutating Brain")
         for network in self.networks.values():
             if network.count > 256 :

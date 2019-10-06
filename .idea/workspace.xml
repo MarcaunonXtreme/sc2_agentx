@@ -2,6 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="027a5175-9440-4f20-8420-36c7921409aa" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/AgentBrain.py" beforeDir="false" afterPath="$PROJECT_DIR$/AgentBrain.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MicroAgentC2.py" beforeDir="false" afterPath="$PROJECT_DIR$/MicroAgentC2.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Training01.py" beforeDir="false" afterPath="$PROJECT_DIR$/Training01.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -15,8 +17,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Training01.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="306">
-              <caret line="478" column="13" lean-forward="true" selection-start-line="478" selection-start-column="13" selection-end-line="478" selection-end-column="13" />
+            <state relative-caret-position="323">
+              <caret line="367" column="103" selection-start-line="367" selection-start-column="103" selection-end-line="367" selection-end-column="103" />
               <folding>
                 <element signature="e#1#11#0" expanded="true" />
               </folding>
@@ -48,8 +50,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/MicroAgentC2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="357">
-              <caret line="599" column="84" selection-start-line="599" selection-start-column="84" selection-end-line="600" />
+            <state relative-caret-position="-238">
+              <caret line="540" column="55" selection-start-line="540" selection-start-column="55" selection-end-line="540" selection-end-column="55" />
               <folding>
                 <element signature="e#1#11#0" expanded="true" />
               </folding>
@@ -65,15 +67,6 @@
               <folding>
                 <element signature="e#1#11#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/pixel_map.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="198">
-              <caret line="30" column="8" selection-start-line="30" selection-start-column="8" selection-end-line="30" selection-end-column="8" />
             </state>
           </provider>
         </entry>
@@ -111,8 +104,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/AgentBrain.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="367">
-              <caret line="116" column="8" selection-start-line="116" selection-start-column="8" selection-end-line="116" selection-end-column="8" />
+            <state relative-caret-position="214">
+              <caret line="111" column="31" selection-start-line="111" selection-start-column="31" selection-end-line="111" selection-end-column="31" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -131,7 +124,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>position</find>
       <find>game_loop</find>
       <find>cooldown</find>
       <find>new unit:</find>
@@ -161,6 +153,7 @@
       <find>enemy_location_0</find>
       <find>battle_field_position</find>
       <find>time</find>
+      <find>ZERGLING</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -180,11 +173,11 @@
         <option value="$PROJECT_DIR$/TrainableAgent.py" />
         <option value="$PROJECT_DIR$/dicts/canCloak.py" />
         <option value="$PROJECT_DIR$/dicts/creep.py" />
-        <option value="$PROJECT_DIR$/AgentBrain.py" />
         <option value="$PROJECT_DIR$/MacroAgentB1.py" />
         <option value="$PROJECT_DIR$/Memory.py" />
         <option value="$PROJECT_DIR$/BaseAgentA1.py" />
         <option value="$PROJECT_DIR$/MicroAgentC2.py" />
+        <option value="$PROJECT_DIR$/AgentBrain.py" />
         <option value="$PROJECT_DIR$/Training01.py" />
       </list>
     </option>
@@ -735,26 +728,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/MicroAgentC2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="357">
-          <caret line="599" column="84" selection-start-line="599" selection-start-column="84" selection-end-line="600" />
-          <folding>
-            <element signature="e#1#11#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/AgentBrain.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="367">
-          <caret line="116" column="8" selection-start-line="116" selection-start-column="8" selection-end-line="116" selection-end-column="8" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/BaseAgentA1.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="302">
@@ -772,10 +745,30 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/MicroAgentC2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-238">
+          <caret line="540" column="55" selection-start-line="540" selection-start-column="55" selection-end-line="540" selection-end-column="55" />
+          <folding>
+            <element signature="e#1#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/AgentBrain.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="214">
+          <caret line="111" column="31" selection-start-line="111" selection-start-column="31" selection-end-line="111" selection-end-column="31" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/Training01.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="306">
-          <caret line="478" column="13" lean-forward="true" selection-start-line="478" selection-start-column="13" selection-end-line="478" selection-end-column="13" />
+        <state relative-caret-position="323">
+          <caret line="367" column="103" selection-start-line="367" selection-start-column="103" selection-end-line="367" selection-end-column="103" />
           <folding>
             <element signature="e#1#11#0" expanded="true" />
           </folding>

@@ -603,7 +603,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         #move or attack?
         #TODO: flee!
 
-        if move_pri > 1.0:
+        if move_pri > 1.0 or best_pri < 0.0:
             if self.debug:
                 self.draw_debug_line(unit, unit.position + slice_delta[best_slice], (50,255,50))
 

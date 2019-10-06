@@ -64,7 +64,7 @@ def calculate_wealth(self):
 
 
 class TrainingMaster:
-    def __init__(self, nr_brains = 20):
+    def __init__(self, nr_brains = 30):
         self.players = [None, None]
         self.setup_stage = 0
         self.round = 0
@@ -197,17 +197,17 @@ class TrainingMaster:
         #TODO: adjust for partial damage?? (not sure this is a good idea?)
         p1_score = lost_wealth[1] - lost_wealth[0]
         #p2_score = lost_wealth[0] - lost_wealth[1]
-        if p1_score >= 0:
+        if p1_score > 0:
             #in case we did okay or good the faster we won the better!
             if bonus_time > 0:
                 p1_score += round(bonus_time)
-        else:
+        elif p1_score < 0:
             #if we lost, the longer we kept enemy busy the better (slightly)
             #ie the faster the enemy killed us the worst it is
             if bonus_time > 0:
                 p1_score -= round(bonus_time)
 
-        p1_score += lost_wealth[1] * 0.05 # 5% of enemy losses are directly added as score - then encourage engagement rather than running away
+        p1_score += lost_wealth[1] * 0.1 # 10% of enemy losses are directly added as score - then encourage engagement rather than running away
 
         print(f"Player 1 score = {p1_score}")
         #print(f"Player 2 score = {p2_score}")
@@ -364,11 +364,12 @@ class TrainingMaster:
             pos = self.get_pos(agent)
             #TODO: implement actual scenarios
             if agent.race == Race.Zerg:
-                await agent.client.debug_create_unit([[UnitTypeId.ZERGLING, 12, pos, agent.player_id]])
-                #await agent.client.debug_create_unit([[UnitTypeId.ROACH, 2, pos, agent.player_id]])
+                await agent.client.debug_create_unit([[UnitTypeId.ZERGLING, 10, pos, agent.player_id]])
+                #await agent.client.debug_create_unit([[UnitTypeId.BANELING, 3, pos, agent.player_id]])
+                await agent.client.debug_create_unit([[UnitTypeId.ROACH, 8, pos, agent.player_id]])
             elif agent.race == Race.Terran:
-                await agent.client.debug_create_unit([[UnitTypeId.MARINE, 6, pos, agent.player_id]])
-                await agent.client.debug_create_unit([[UnitTypeId.MARAUDER, 2, pos, agent.player_id]])
+                await agent.client.debug_create_unit([[UnitTypeId.MARINE, 12, pos, agent.player_id]])
+                await agent.client.debug_create_unit([[UnitTypeId.MARAUDER, 4, pos, agent.player_id]])
             elif agent.race == Race.Protoss:
                 await agent.client.debug_create_unit([[UnitTypeId.ZEALOT, 4, pos, agent.player_id]])
                 await agent.client.debug_create_unit([[UnitTypeId.STALKER, 2, pos, agent.player_id]])
@@ -564,6 +565,6 @@ the_master = TrainingMaster()
 #TODO: fix error with flat64 map, apparently expansion at 24.5 / 61.5 is not in the list?
 
 run_game(maps.get("Flat96"), [
-    Bot(Race.Zerg, BotInTraining(the_master)),
+    Bot(Race.Terran, BotInTraining(the_master)),
     Bot(Race.Zerg, Protagonist(the_master)),
 ], realtime=global_debug)
