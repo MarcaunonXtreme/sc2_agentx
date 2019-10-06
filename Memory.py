@@ -58,9 +58,13 @@ class UnitMemory:
         else:
             #for friendlies:
             self.enemy_in_range_count = 0
+            self.friend_in_range_count = 0
             self.last_attack_target = None
 
             self.radar = np.zeros((8,32)) # used by radar for movement decisions
+
+            self.friendly_centre : Point2 = None # Centre of gravity of friendly units
+            self.enemy_centre : Point2 = None # Centre of gravity of enemy units
 
         #both:
         self.can_attack_count = 0

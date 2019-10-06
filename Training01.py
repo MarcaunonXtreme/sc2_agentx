@@ -364,15 +364,15 @@ class TrainingMaster:
             pos = self.get_pos(agent)
             #TODO: implement actual scenarios
             if agent.race == Race.Zerg:
-                await agent.client.debug_create_unit([[UnitTypeId.ZERGLING, 10, pos, agent.player_id]])
+                #await agent.client.debug_create_unit([[UnitTypeId.ZERGLING, 10, pos, agent.player_id]])
                 #await agent.client.debug_create_unit([[UnitTypeId.BANELING, 3, pos, agent.player_id]])
-                await agent.client.debug_create_unit([[UnitTypeId.ROACH, 8, pos, agent.player_id]])
+                await agent.client.debug_create_unit([[UnitTypeId.ROACH, 12, pos, agent.player_id]])
             elif agent.race == Race.Terran:
                 await agent.client.debug_create_unit([[UnitTypeId.MARINE, 12, pos, agent.player_id]])
                 await agent.client.debug_create_unit([[UnitTypeId.MARAUDER, 4, pos, agent.player_id]])
             elif agent.race == Race.Protoss:
-                await agent.client.debug_create_unit([[UnitTypeId.ZEALOT, 4, pos, agent.player_id]])
-                await agent.client.debug_create_unit([[UnitTypeId.STALKER, 2, pos, agent.player_id]])
+                #await agent.client.debug_create_unit([[UnitTypeId.ZEALOT, 4, pos, agent.player_id]])
+                await agent.client.debug_create_unit([[UnitTypeId.STALKER, 12, pos, agent.player_id]])
             else:
                 raise NotImplementedError
 
@@ -565,6 +565,6 @@ the_master = TrainingMaster()
 #TODO: fix error with flat64 map, apparently expansion at 24.5 / 61.5 is not in the list?
 
 run_game(maps.get("Flat96"), [
-    Bot(Race.Terran, BotInTraining(the_master)),
-    Bot(Race.Zerg, Protagonist(the_master)),
+    Bot(Race.Protoss, BotInTraining(the_master)),
+    Bot(Race.Protoss, Protagonist(the_master)),
 ], realtime=global_debug)

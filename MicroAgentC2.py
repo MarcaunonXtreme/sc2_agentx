@@ -177,9 +177,15 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                     mem.radar[i, 0] = 20.0 #for closest friendly unit
                     mem.radar[i, 1] = 20.0 #for closest enemy unit
 
+                enemy_centre = [0, 0]
+
+
                 enemy : UnitMemory
                 for enemy in self.enemy_memory.values:
                     if unit.position._distance_squared(enemy.position) < 100.0: #TODO: make this 15**2
+
+                        enemy_centre[0] += enemy.position.x
+                        enemy_centre[1] += enemy.position.y
                         mem.enemy_in_range_count += 1
 
                         #was target previously?
@@ -229,6 +235,10 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                             #7 = how far can we move back and still have enemy in range?
                             mem.radar[s,7] = max(mem.radar[s,7], attack_range - dist_to_enemy - 0.1)
 
+                if mem.enemy_in_range_count:
+                    mem.enemy_centre = Point2((enemy_centre[0] / mem.enemy_in_range_count, enemy_centre[1] / mem.enemy_in_range_count))
+                else:
+                    mem.enemy_centre = mem.position
 
         #delete memory of any friendly units that died previously (can maybe do this via a callback??)
         self.friendly_memory.process_missing_friendly_units()
@@ -377,8 +387,13 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
 
         #Calculate additional RADAR stuff: (relative to friendly units in area)
+        friend_centre = [0,0]
         for u2 in self.units:
             if mem.position._distance_squared(u2.position) < 100.0:
+
+                friend_centre[0] += u2.position.x
+                friend_centre[1] += u2.position.y
+                mem.friend_in_range_count += 1
 
                 dist_to_friend = unit.distance_to(u2) - unit.radius - u2.radius
 
@@ -386,6 +401,10 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                 mem.radar[s,0] = min(mem.radar[s,0], dist_to_friend)
                 mem.radar[s,2] += 1 #scale somehow?
 
+        if mem.friend_in_range_count:
+            mem.friendly_centre = Point2( (friend_centre[0] / mem.friend_in_range_count, friend_centre[1] / mem.friend_in_range_count) )
+        else:
+            mem.friendly_centre = mem.position
 
         #First create the general inputs that helps the unit decide against ALL enemies
         general_inputs = np.zeros(42)
@@ -547,8 +566,15 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
 
         move_pri = np.zeros(8)
+
+        #TODO: can probably use distance squared to speed this up!
+        E = mem.position.distance_to(mem.enemy_centre)
+        F = mem.position.distance_to(mem.friendly_centre)
+
         #Process slices for move prioritization:
         for s in range(8):
+            dest_position : Point2 = mem.position + (slice_delta[s] * 0.5)
+
             inputs = np.copy(mem.radar[s])
             #scale normalizations for network required firstly:
             inputs[0] = min(1.0, inputs[0] * 0.25) #dist 2 closest friendly unit
@@ -561,6 +587,18 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             inputs[7] = min(1.0, inputs[7] * 0.25) # how far we can move back and still keep "an" enemy in range
             inputs[8] = min(1.0, inputs[8] * 0.25) # how far we need to move back to escape enemy range
 
+
+            if mem.friend_in_range_count > 0 and mem.enemy_in_range_count > 0:
+                E2 = mem.enemy_centre.distance_to(dest_position)
+                F2 = mem.friendly_centre.distance_to(dest_position)
+
+                inputs[10] = np.clip( E2-E, -1.0, 1.0) #approach/retreat enemy centre
+                inputs[11] = np.clip( F2-F, -1.0, 1.0) #approach/retreat friendly centre
+                inputs[12] = np.clip( (F-E) - (F2-E2) , -1.0, 1.0) #Approach/retreat from battle line
+                inputs[13] = np.clip( (F-E) / 8.0, -1.0, 1.0) # general input to help determine where we at
+                inputs[14] = np.clip( (F2+E2) - (F+E) , -1.0, 1.0) # moving towards/away from the centre line (helps with flanking?)
+
+            #TODO: compare distance from battle line with range to help units align correctly before they engage?
             #TODO: some normalization of highest attack priority target found in this slice direction (from attack network calculation)
             #TODO: some threat prioritization system? ie how dangerous is this slice?
             #TODO: Power projection stuff!!
