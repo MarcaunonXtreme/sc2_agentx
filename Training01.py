@@ -19,7 +19,7 @@ import random
 import numpy as np
 
 
-global_debug = True
+global_debug = False
 
 ###Scenario control:
 ## Ultimately we want to play every scenario at least 6 times (for genetic algorithms)
@@ -64,7 +64,7 @@ def calculate_wealth(self):
 
 
 class TrainingMaster:
-    def __init__(self, nr_brains = 16):
+    def __init__(self, nr_brains = 20):
         self.players = [None, None]
         self.setup_stage = 0
         self.round = 0
@@ -119,13 +119,22 @@ class TrainingMaster:
     def end_map_now(self):
         print("==== ENDING THIS MAP ====")
 
-        rounds = [b.used for b in self.brains]
-        scores = [b.score / max(1,b.used) for b in self.brains]  #actually the average score to make it fair.
+        #TODO: update this to actually work on networks and note brains!
+
+        for b in self.brains:
+            assert b.used == 1 #all brains used once now!
+
+        scores = [b.score for b in self.brains]  #actually the average score to make it fair.
 
         f = open("train_report.txt","a+")
         f.write("== End of Map ==\r\n")
-        f.write(f"ROUNDS:  {rounds}\n")
-        f.write(f"SCORES: {scores}\n")
+        f.write(f"SCORES: {scores}\r\n")
+
+        scores.sort(reverse=True)
+        cutoff1 = scores[round(len(scores)*0.1)]
+        cutoff2 = scores[round(len(scores)*0.3)]
+        f.write(f"top 10% score = {cutoff1}\r\n")
+        f.write(f"top 30% score = {cutoff2}\r\n")
 
         top_score = max(scores)
         bot_score = min(scores)
@@ -136,14 +145,14 @@ class TrainingMaster:
                 continue #don't remove top scorer ever!
             if b.used <= 0:
                 continue #don't delete brains if they never had a chance!
-            ss = (b.score-bot_score) / (top_score - bot_score)
-            # a triple roll elimination mechanic
-            r = max(np.random.random(3))
-            if ss < r:
-                #removing this brain as it sucks 2 much
+
+            #TODO: upgrade this to the star system!
+            if b.score < cutoff2:
+                #Not in top 30%
                 self.brains[i] = None
-            if b.score < -100: #this bot on average lost
-                if np.random.random() < 0.6: #60% chance to get killed
+            elif b.score < cutoff1:
+                #Not in top 10% = 50% elimination chance
+                if np.random.random() < 0.5:
                     self.brains[i] = None
 
         survived = [b for b in self.brains if b is not None]
@@ -187,11 +196,17 @@ class TrainingMaster:
         #TODO: adjust also based on time taken
         #TODO: adjust for partial damage?? (not sure this is a good idea?)
         p1_score = lost_wealth[1] - lost_wealth[0]
-        p2_score = lost_wealth[0] - lost_wealth[1]
+        #p2_score = lost_wealth[0] - lost_wealth[1]
         print(f"Player 1 score = {p1_score}")
-        print(f"Player 2 score = {p2_score}")
+        #print(f"Player 2 score = {p2_score}")
 
-        if self.round >= len(self.brains)*2:
+        done = True
+        for b in self.brains:
+            if not b.used:
+                done = False
+                break
+        if done:
+            #all brains have now been used one time
             self.end_map_now()
 
 
@@ -204,13 +219,14 @@ class TrainingMaster:
 
         #Start new scenario:
         self.round += 1
-        #swap brains: (and add score
+
+        #Score the brain used by player 1 only
         b1 : AgentBrain = self.players[0].get_brain()
-        b2 : AgentBrain = self.players[1].get_brain()
+        #b2 : AgentBrain = self.players[1].get_brain()
         b1.score += p1_score
-        b2.score += p2_score
-        self.players[0].use_brain(b2)
-        self.players[1].use_brain(b1)
+        #b2.score += p2_score
+        #self.players[0].use_brain(b2)
+        #self.players[1].use_brain(b1)
 
 
     def check_scenario_end(self,agent :sc2.BotAI):
@@ -281,20 +297,25 @@ class TrainingMaster:
         #print(f"Player {agent.player_id} setup stage = {agent.setup_stage}")
         if agent.setup_stage == 0:
             #load checkpoint:
-            print("== STARTING NEW SCENARIO ==")
+            if agent.player_id == 1:
+                print("== STARTING NEW SCENARIO ==")
 
             #setup fallback position
             await self.create_buildings(agent)
 
-            if self.round % 2 == 0:
-                #get a new brain here:
-                while True:
-                    w = [max(0.01,(6 - b.used)/6) for b in self.brains ]
-                    b = np.random.choice(self.brains, p=w/np.sum(w))
-                    if b != self.players[0].get_brain() and b != self.players[1].get_brain():
+            if agent.player_id == 1:
+                # select new brain for player 1
+                chosen = None
+                for b in self.brains:
+                    if b.used == 0:
+                        chosen = b
                         break
+                assert chosen
+                agent.use_brain(chosen)
 
-                agent.use_brain( b  )
+            else:
+                # player 2 don't get a new brain as it's the protagonist
+                pass
 
             #clear old stuff:
             await agent.client.debug_fast_build()
@@ -326,8 +347,8 @@ class TrainingMaster:
             pos = self.get_pos(agent)
             #TODO: implement actual scenarios
             if agent.race == Race.Zerg:
-                await agent.client.debug_create_unit([[UnitTypeId.ZERGLING, 8, pos, agent.player_id]])
-                await agent.client.debug_create_unit([[UnitTypeId.ROACH, 2, pos, agent.player_id]])
+                await agent.client.debug_create_unit([[UnitTypeId.ZERGLING, 12, pos, agent.player_id]])
+                #await agent.client.debug_create_unit([[UnitTypeId.ROACH, 2, pos, agent.player_id]])
             elif agent.race == Race.Terran:
                 await agent.client.debug_create_unit([[UnitTypeId.MARINE, 6, pos, agent.player_id]])
                 await agent.client.debug_create_unit([[UnitTypeId.MARAUDER, 2, pos, agent.player_id]])
@@ -363,14 +384,20 @@ class TrainingMaster:
         if agent.setup_stage == 6:
             agent.setup_stage = 7
             # Second round of upgrades
+            agent.setup_wait = 16
 
 
         if agent.setup_stage == 7:
+            agent.setup_wait -= 1 # A little bit of a delay to make sure all broodlings spawned so we can delete them again
+            if agent.setup_wait > 0:
+                return
+
             agent.setup_stage = 8
             # Third round of upgrades
 
+
             #Kill garbage/temp units here to not interfere
-            garbage = agent.units.filter(lambda u: u.type_id in [UnitTypeId.BROODLING, UnitTypeId.EGG, UnitTypeId.LARVA, UnitTypeId.MULE, UnitTypeId.AUTOTURRET, UnitTypeId.INFESTEDTERRAN, UnitTypeId.LOCUSTMPFLYING, UnitTypeId.LOCUSTMP])
+            garbage = agent.units.filter(lambda u: u.type_id in [UnitTypeId.BROODLINGESCORT, UnitTypeId.BROODLING, UnitTypeId.EGG, UnitTypeId.LARVA, UnitTypeId.MULE, UnitTypeId.AUTOTURRET, UnitTypeId.INFESTEDTERRAN, UnitTypeId.LOCUSTMPFLYING, UnitTypeId.LOCUSTMP])
             if garbage:
                 await agent.client.debug_kill_unit(garbage)
 
@@ -443,7 +470,8 @@ class Protagonist(sc2.BotAI, TrainableAgent):
                 for u in self.units:
                     self.do(u.attack(self.enemy_location_0))
 
-
+            # Check if scenario ended?
+            self.master.check_scenario_end(self)
 
     async def on_unit_destroyed(self, unit_tag):
         await super(Protagonist, self).on_unit_destroyed(unit_tag)
@@ -515,6 +543,6 @@ the_master = TrainingMaster()
 #TODO: fix error with flat64 map, apparently expansion at 24.5 / 61.5 is not in the list?
 
 run_game(maps.get("Flat96"), [
-    Bot(Race.Terran, BotInTraining(the_master)),
-    Bot(Race.Terran, Protagonist(the_master)),
+    Bot(Race.Zerg, BotInTraining(the_master)),
+    Bot(Race.Zerg, Protagonist(the_master)),
 ], realtime=global_debug)

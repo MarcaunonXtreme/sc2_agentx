@@ -796,6 +796,10 @@ class BaseAgentA1(sc2.BotAI):
             p0 = p0.position
         if isinstance(p1, Unit):
             p1 = p1.position
-        p0 : Point3 = Point3((p0.x, p0.y, self.get_terrain_z_height(p0)+0.2))
-        p1 : Point3 = Point3((p1.x, p1.y, self.get_terrain_z_height(p1)+0.2))
+        map_w = self._game_info.terrain_height.width-1
+        map_h = self._game_info.terrain_height.height-1
+        p0_m = Point2( (np.clip(p0.x,0,map_w), np.clip(p0.y,0,map_h)) )
+        p1_m = Point2((np.clip(p1.x, 0, map_w), np.clip(p1.y, 0, map_h)))
+        p0 : Point3 = Point3((p0.x, p0.y, self.get_terrain_z_height(p0_m)+0.2))
+        p1 : Point3 = Point3((p1.x, p1.y, self.get_terrain_z_height(p1_m)+0.2))
         self.client.debug_line_out(p0,p1,color)

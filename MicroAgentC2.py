@@ -590,9 +590,12 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         # The general idea is that if move_pri >= 1.0 then we move in that direction
         # maybe also move if attack priority < 0.0 ?
         # note: it might take a while for the genetic algorithm to spit out >= 1.0 priorities.. maybe not the best idea?
-        move_pri -= move_pri.mean() #normalize it first around zero at least.
-        best_slice = move_pri.argmax()
-        move_pri = move_pri[best_slice]
+        move_pri2 = np.zeros(8)
+        for s in range(8):
+            move_pri2[s] = move_pri[s] + (move_pri[(s-1)%8] + move_pri[(s+1)%8])*0.9 + (move_pri[(s-2)%8] + move_pri[(s+2)%8])*0.7
+
+        best_slice = move_pri2.argmax()
+        move_pri = move_pri2[best_slice]
         if not mem.is_melee and unit.weapon_cooldown > 0.5:
             move_pri *= 1.5 #boost move priority for stutter stepping on range units
 
@@ -602,8 +605,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
         if move_pri > 1.0:
             if self.debug:
-                delta = slice_delta[best_slice] * move_pri * 5.0
-                self.draw_debug_line(unit, unit.position + delta)
+                self.draw_debug_line(unit, unit.position + slice_delta[best_slice], (50,255,50))
 
             self.do(unit.move(unit.position + slice_delta[best_slice]))
 
