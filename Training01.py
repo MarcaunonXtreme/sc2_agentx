@@ -70,6 +70,7 @@ class TrainingMaster:
         self.round = 0
         self.end_time = 90.0
         self.position = [[Point2(),Point2()],[Point2(),Point2()]]
+        self.battle_field_position : Point2 = None
         self.brains = []
         for nr in range(nr_brains):
             self.brains.append(AgentBrain.load(f"agents/agent_{nr}.p"))
@@ -104,7 +105,7 @@ class TrainingMaster:
         #Note: not sure this is really workable?
         if agent.race == Race.Zerg:
             # We create some static D around the hatchery so that the AI can't learn to just target this first or run around or something
-            for _ in range(4):
+            for _ in range(5):
                 await agent.client.debug_create_unit([[UnitTypeId.SPINECRAWLER, 1, agent.start_location, agent.player_id]])
                 await agent.client.debug_create_unit([[UnitTypeId.SPORECRAWLER, 1, agent.start_location, agent.player_id]])
         elif agent.race == Race.Terran:
@@ -112,7 +113,7 @@ class TrainingMaster:
                 await agent.client.debug_create_unit([[UnitTypeId.PLANETARYFORTRESS, 1, agent.start_location, agent.player_id]])
                 await agent.client.debug_create_unit([[UnitTypeId.MISSILETURRET, 2, agent.start_location, agent.player_id]])
         elif agent.race == Race.Protoss:
-            await agent.client.debug_create_unit([[UnitTypeId.PHOTONCANNON, 6, agent.start_location, agent.player_id]])
+            await agent.client.debug_create_unit([[UnitTypeId.PHOTONCANNON, 8, agent.start_location, agent.player_id]])
         else:
             raise NotImplementedError
 
@@ -180,7 +181,7 @@ class TrainingMaster:
         #p.client.debug_leave()
 
 
-    def end_scenario_now(self):
+    def end_scenario_now(self, bonus_time):
         print("=SCENARIO ENDED=")
         end_time = self.players[0].time
         print(f"Scenario ended in {end_time}")
@@ -192,11 +193,22 @@ class TrainingMaster:
             #print(f"Player {agent.player_id} end wealth = {wealth}")
             lost_wealth.append(abs(wealth - agent.start_wealth))
 
-
         #TODO: adjust also based on time taken
         #TODO: adjust for partial damage?? (not sure this is a good idea?)
         p1_score = lost_wealth[1] - lost_wealth[0]
         #p2_score = lost_wealth[0] - lost_wealth[1]
+        if p1_score >= 0:
+            #in case we did okay or good the faster we won the better!
+            if bonus_time > 0:
+                p1_score += round(bonus_time)
+        else:
+            #if we lost, the longer we kept enemy busy the better (slightly)
+            #ie the faster the enemy killed us the worst it is
+            if bonus_time > 0:
+                p1_score -= round(bonus_time)
+
+        p1_score += lost_wealth[1] * 0.05 # 5% of enemy losses are directly added as score - then encourage engagement rather than running away
+
         print(f"Player 1 score = {p1_score}")
         #print(f"Player 2 score = {p2_score}")
 
@@ -234,19 +246,19 @@ class TrainingMaster:
         if th.health_percentage < 0.99:
             #TODO: in advanced mode maybe we can hide a floating CC in the corner of the map to avoid triggering the game ending when the townhall dies?
             print("Townhall damaged - ending scenario")
-            self.end_scenario_now()
-        elif agent.time >= self.end_time: #1.5 minutes is max time for scenario
+            self.end_scenario_now( self.end_time - agent.time )
+        elif agent.time >= self.end_time:
             print("Scenario ended due to time limit")
-            self.end_scenario_now()
+            self.end_scenario_now( self.end_time - agent.time  )
         elif agent.death_struct_tag == -1:
              print("Fallback position destroyed, ending scenario")
-             self.end_scenario_now()
+             self.end_scenario_now( self.end_time - agent.time )
         else:
             if len(agent.units) < 10:
                 cnt = agent.units.filter(lambda u: u.type_id not in [UnitTypeId.EGG, UnitTypeId.LARVA, UnitTypeId.MULE, UnitTypeId.BROODLING, UnitTypeId.CREEPTUMOR, UnitTypeId.CREEPTUMORBURROWED])
                 if len(cnt) <= 0:
                     print("Units lost, ending scenario")
-                    self.end_scenario_now()
+                    self.end_scenario_now( self.end_time - agent.time )
 
 
     def get_pos(self, agent: sc2.BotAI, pos_nr = 0) -> Point2:
@@ -268,7 +280,10 @@ class TrainingMaster:
         for i in range(2):
             for j in range(2):
                 pos = self.position[i][j]
-                self.position[i][j] = Point2((int(pos.x),int(pos.y)))
+                self.position[i][j] = pos.rounded
+
+        self.battle_field_position = (self.position[0][0] + self.position[1][0]) / 2.0
+        self.battle_field_position = self.battle_field_position.rounded
 
     async def create_buildings(self, agent: sc2.BotAI):
         pos = self.get_pos(agent, pos_nr=1)
@@ -281,12 +296,14 @@ class TrainingMaster:
         if agent.race == Race.Zerg:
             # We create some static D around the hatchery so that the AI can't learn to just target this first or run around or something
             await agent.client.debug_create_unit([[UnitTypeId.CREEPTUMORBURROWED, 2,pos, agent.player_id]])
-            await agent.client.debug_create_unit([[UnitTypeId.GREATERSPIRE, 1, pos, agent.player_id]])
+            #await agent.client.debug_create_unit([[UnitTypeId.GREATERSPIRE, 1, pos, agent.player_id]])
         elif agent.race == Race.Terran:
-            await agent.client.debug_create_unit([[UnitTypeId.FUSIONCORE, 1, pos, agent.player_id]])
+            #await agent.client.debug_create_unit([[UnitTypeId.FUSIONCORE, 1, pos, agent.player_id]])
+            pass
         elif agent.race == Race.Protoss:
             #await agent.client.debug_create_unit([[UnitTypeId.PYLON, 1, pos, agent.player_id]])
-            await agent.client.debug_create_unit([[UnitTypeId.FLEETBEACON, 1, pos, agent.player_id]])
+            #await agent.client.debug_create_unit([[UnitTypeId.FLEETBEACON, 1, pos, agent.player_id]])
+            pass
         else:
             raise NotImplementedError
 
@@ -358,9 +375,8 @@ class TrainingMaster:
             else:
                 raise NotImplementedError
 
-            #for these scenarios we set the enemy location to the opposite unit start, this helps them to fight units and not each others hatcheries
-            [p for p in self.players if p != agent][0].enemy_location_0 = self.get_pos(agent,1)
-
+            #set target location
+            agent.enemy_location_0 = self.battle_field_position
 
         if agent.setup_stage == 3:
             #Wait for created units and structures to spawn
@@ -412,23 +428,19 @@ class TrainingMaster:
             #Disable fast build:
             await agent.client.debug_fast_build()
 
-            #Find the "death building":
-            for u in agent.structures:
-                if u.type_id in [UnitTypeId.GREATERSPIRE, UnitTypeId.FLEETBEACON, UnitTypeId.FUSIONCORE]:
-                    agent.death_struct_tag = u.tag
-                    break
-            assert agent.death_struct_tag > 0
+            #Find the "death building": (in this case the base)
+            agent.death_struct_tag = agent.townhalls[0].tag
 
             #determine start wealth:
             m, v = calculate_wealth(agent)
             agent.start_wealth = m + v*1.5
-            self.end_time = agent.time + 60.0 # 60 seconds is more than enough time for them to do something
+            self.end_time = agent.time + 45.0 # 45 seconds is more than enough time
             #print(f"player {agent.player_id} scenario start wealth = {agent.start_wealth}")
 
             #Maybe give units commands
             #GO!
 
-
+#TODO: Move protagonist out to a different file as it's going to get WAY more complex soon
 class Protagonist(sc2.BotAI, TrainableAgent):
     def __init__(self, master, *args):
         super(Protagonist,self).__init__(*args)
@@ -446,6 +458,7 @@ class Protagonist(sc2.BotAI, TrainableAgent):
 
         self.do_it = True
         self.enemy_location_0 : Point2 = None
+        self.protect = False
 
     async def on_start(self):
         self.master.register_player(self)
@@ -465,10 +478,18 @@ class Protagonist(sc2.BotAI, TrainableAgent):
             self.do_it = True
         else:
             if self.do_it:
-                self.do_it = True
+                self.do_it = False
                 u : Unit
                 for u in self.units:
                     self.do(u.attack(self.enemy_location_0))
+
+            death_struct = self.structures.find_by_tag(self.death_struct_tag)
+            if death_struct and not self.protect:
+                if death_struct.health < death_struct.health_max:
+                    self.protect = True
+                    for u in self.units:
+                        self.do(u.attack(death_struct.position))
+
 
             # Check if scenario ended?
             self.master.check_scenario_end(self)
