@@ -13,3 +13,7 @@ CREEP_BUFF_FACTOR = {
     UnitTypeId.SPORECRAWLER : 1.5,
     UnitTypeId.SPINECRAWLER : 1.5
 }
+
+
+def get_creep_speed_factor(id):
+    return CREEP_BUFF_FACTOR.get(id, CREEP_BUFF_DEFAULT)
