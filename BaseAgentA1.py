@@ -151,6 +151,11 @@ class BaseAgentA1(sc2.BotAI):
         self.queen_inject_targets = {} #queen_tags -> hatchery_tags
         self.hatch_queens = {} # hatch_tags -> queen_tags
 
+        #indices gets set to TRUE when we have completed an upgrade
+        self.got_upgrades = np.zeros(312,dtype=np.bool)
+        #indices gets increased when buildings are finished and decreased if they get destroyed
+        self.got_structure = np.zeros(2048, dtype=np.uint8)
+
     async def on_start(self):
         #print(">on_start<")
         self.is_zerg = (self.race == sc2.Race.Zerg)
@@ -275,6 +280,7 @@ class BaseAgentA1(sc2.BotAI):
         return None
 
     async def on_upgrade_complete(self, upgrade: UpgradeId):
+        self.got_upgrades[upgrade.value] = True
         for task in self.structure_tasks:
             if task.creation_type == CreationTask.TYPE_RESEARCH and task.research_id == upgrade:
                 print("SUCCESS: research completed")
@@ -449,6 +455,7 @@ class BaseAgentA1(sc2.BotAI):
                     task.building_tag = unit.tag
 
     async def on_building_construction_complete(self, unit: Unit):
+        self.got_structure[unit.type_id.value] += 1
         task: CreationTask
         for task in self.structure_tasks:
             if task.creation_type in [CreationTask.TYPE_STRUCTURE, CreationTask.TYPE_MORPH_STRUCTURE, CreationTask.TYPE_ADDON] and task.target_unit_id == unit.type_id and unit.tag == task.building_tag:
@@ -532,13 +539,15 @@ class BaseAgentA1(sc2.BotAI):
                 task.building_tag = None
                 return
 
-
-    #async def on_unit_destroyed(self, unit_tag):
+    async def on_unit_destroyed(self, unit_tag):
+        pass
+        #TODO: got_structures - need to have a memory of what this unit_tag was!
+        #self.got_structure[]
         #TODO: Use this for buildings destroyed that wasn't completed!
         #TODO: Use this to trigger building replacements
-        #TODO: Use this to notice if morphed units was destroyed
+        #TODO: Use this to notice if morphed units was destroyed (only if tasked)
         #TODO: Use this in terran if scv destroyed while building
-        #pass
+        
 
 
     def find_next_gas_location(self):
