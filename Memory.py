@@ -11,6 +11,11 @@ from dicts.canCloak import CAN_CLOAK
 
 from sc2.dicts.unit_unit_alias import UNIT_UNIT_ALIAS
 
+from sc2.constants import IS_LIGHT, IS_ARMORED, IS_BIOLOGICAL, IS_MECHANICAL, IS_MASSIVE
+
+from luts.attackUpgrades import *
+
+
 #TODO: consider blips
 #TODO: consider snapshots
 #TODO: consider so many other things!
@@ -22,9 +27,21 @@ class UnitMemory:
         self.unit = unit
         self.tag = unit.tag
         self.type_id = UNIT_UNIT_ALIAS.get(unit.type_id, unit.type_id)
+        self.current_type_id = 0
         self.position : Point2 = unit.position
 
+        #melee or ranged?
         self.is_melee = max(unit.air_range, unit.ground_range) > 2.0
+        #flying or ground unit?
+        self.is_flying = unit.is_flying #Note: Deal with vikings exception!
+        # light/armored/none?
+        self.is_light = unit.is_light
+        self.is_armored = unit.is_armored
+        # biological/mechanical/none?
+        self.is_biological = unit.is_biological
+        self.is_mechanical = unit.is_mechanical
+        #special:
+        self.is_massive = unit.is_massive
 
         self.radius = unit.radius
         self.speed2 = 0
@@ -32,6 +49,18 @@ class UnitMemory:
         self.shield = unit.shield
         self.lost_hp = 0
         self.lost_shield = 0
+        self.armor = 0
+        self.shield_armor = 0
+
+        weapon_ground = next((weapon for weapon in unit._weapons if weapon.type in TARGET_GROUND), None)
+        weapon_air = next((weapon for weapon in unit._weapons if weapon.type in TARGET_AIR), None)
+        #TODO: use a namedtuple rather:
+        self.ground_damage = (weapon_ground.damage , weapon_ground.attacks, weapon_ground.speed)
+        self.air_damage = (weapon_air.damage, weapon_air.attacks, weapon_air.speed)
+
+        self.attack_upgrade_factor = ATTACK_UPGRADE_INC.get(self.type_id, ATTACK_UPGRADE_DEFAULT)
+        self.bonus_dmg = ATTACK_BONUS_DAMAGE.get(self.type_id, None)
+        self.weapon_upgrade = 0
 
         self.ignore_count = 0
         self.group_id = None
@@ -74,8 +103,60 @@ class UnitMemory:
         # unit.attack_power = 0.0
 
 
+    def got_attribute(self, attr):
+        if attr is IS_LIGHT:
+            return self.is_light
+        elif attr is IS_ARMORED:
+            return self.is_armored
+        elif attr is IS_BIOLOGICAL:
+            return self.is_biological
+        elif attr is IS_MECHANICAL:
+            return self.is_mechanical
+        elif attr is IS_MASSIVE:
+            return self.is_massive
+        else:
+            return False
+
+    #This function returns (damage_vs_hp , damage_vs_shield, dps, time_to_kill)
+    # damage_vs_hp is the number of hitpoint damage it will do versus enemy (if no shield left)
+    # damage_vs_shield is number of shield points damage it will do versus enemy (assuming it's a protoss unit with shield left)
+    # dps - average damage per second versus health/armour (doesn't consider shields)
+    # time_to_kill - an estimation of exactly how long it will take to kill the target (assuming it is in range etc.)
+    def get_dmg_versus(self, enemy : UnitMemory) -> int, int, float, float:
+        #calculate damage output:
+        damage = self.air_damage if enemy.is_flying else self.ground_damage # (damage,attacks,speed)
+        if damage[0] <= 0:
+            return 0 # can't attack this enemy at all
+        factor = self.attack_upgrade_factor[1] if enemy.is_flying else self.attack_upgrade_factor[0]
+
+        # calcualte raw non-bonus damage:
+        raw_dmg = damage[0] + factor*self.weapon_upgrade
+        
+        if self.bonus_dmg: #add bonus damage if applicable
+            if enemy.got_attribute(self.bonus_dmg[0]):
+                raw_dmg += self.bonus_dmg[1] + self.bonus_dmg[2]*self.weapon_upgrade
+
+        #Reduce by armor:
+        #TODO: figure out how to consider shield vs armour here?
+        hp_dmg = (raw_dmg - enemy.armor) * damage[1] # TODO: upgrades! (like plating on ultra)
+        shield_dmg = (raw_dmg - enemy.shield_armor) * damage[1]
+        
+        # Calculate damage per second: (doesn't consider shields here)
+        dps = hp_dmg / damage[2]  #TODO: upgrades
+
+        # Calculate how long it will take to kill the target:
+        #Note: this is not perfect yet in the shield/hp edge?
+        hits = (enemy.shield+shield_dmg-1) // shield_dmg  + (enemy.health+hp_dmg-1 - (enemy.shield%shield_dmg)) // hp_dmg
+        kill_time = hits * damage[2] #TODO: upgrades
+
+        return hp_dmg, shield_dmg, dps, kill_time 
+
+
+
     def update(self, unit : Unit):
         assert unit.tag == self.tag
+
+        self.current_type_id = unit.type_id
 
         self.unit = unit
         self.speed2 = self.position.distance_to_point2(unit.position)
@@ -84,6 +165,9 @@ class UnitMemory:
         self.lost_shield = self.shield - unit.shield
         self.health = unit.health
         self.shield = unit.shield
+        self.armor = unit.armor + unit.armor_upgrade_level #TODO: upgrades!
+        self.shield_armor = unit.shield_upgrade_level
+        self.weapon_upgrade = unit.attack_upgrade_level
         if unit.is_enemy:
             self.facing = unit.facing
             self.energy = unit.energy
