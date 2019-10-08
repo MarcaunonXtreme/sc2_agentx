@@ -7,7 +7,7 @@ from sc2.constants import UnitTypeId
 
 import numpy as np
 
-from dicts.canCloak import CAN_CLOAK
+from luts.canCloak import CAN_CLOAK
 
 from sc2.dicts.unit_unit_alias import UNIT_UNIT_ALIAS
 
@@ -122,7 +122,7 @@ class UnitMemory:
     # damage_vs_shield is number of shield points damage it will do versus enemy (assuming it's a protoss unit with shield left)
     # dps - average damage per second versus health/armour (doesn't consider shields)
     # time_to_kill - an estimation of exactly how long it will take to kill the target (assuming it is in range etc.)
-    def get_dmg_versus(self, enemy : UnitMemory) -> int, int, float, float:
+    def get_dmg_versus(self, enemy ) :
         #calculate damage output:
         damage = self.air_damage if enemy.is_flying else self.ground_damage # (damage,attacks,speed)
         if damage[0] <= 0:

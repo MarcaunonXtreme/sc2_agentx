@@ -6,7 +6,7 @@ from sc2.unit import Unit
 
 import numpy as np
 
-from sc2.constants import UnitTypeId
+from sc2.constants import UnitTypeId, IS_STRUCTURE
 
 import random
 
@@ -799,6 +799,47 @@ class BaseAgentA1(sc2.BotAI):
                 self.do(worker.gather(minerals[index]))
                 index += 1
 
+
+    def calculate_wealth(self, ignore_structs = False, worker_factor = 1.0):
+        m = 0
+        v = 0
+        for unit in self.units + self.structures:  # type: Unit
+            # only if something can be created: (ie not larva and eggs etc)
+            assert isinstance(unit.type_id, UnitTypeId)
+            item_id = unit.type_id
+            if item_id in [UnitTypeId.EGG, UnitTypeId.LARVA, UnitTypeId.MULE, UnitTypeId.BROODLING,
+                           UnitTypeId.CREEPTUMOR,
+                           UnitTypeId.CREEPTUMORBURROWED]:
+                continue
+            unit_data = self._game_data.units[item_id.value]
+            if ignore_structs and IS_STRUCTURE in unit_data.attributes:
+                if item_id not in [UnitTypeId.PHOTONCANNON, UnitTypeId.SHIELDBATTERY, UnitTypeId.SPORECRAWLER, UnitTypeId.SPINECRAWLER, UnitTypeId.MISSILETURRET, UnitTypeId.BUNKER]:
+                    continue
+            if item_id == UnitTypeId.REACTOR:
+                m += 50
+                v += 50
+                continue
+            if item_id == UnitTypeId.TECHLAB:
+                m += 50
+                v += 25
+                continue
+
+            creation_ability = unit_data.creation_ability
+            if not creation_ability:
+                continue
+            type_data = self.game_data.units.get(item_id.value, None)
+            if not type_data:
+                continue
+            # print(f"Cost {item_id} = {type_data.cost}")
+            if item_id in [UnitTypeId.PROBE, UnitTypeId.SCV, UnitTypeId.DRONE]:
+                m += type_data.cost.minerals * worker_factor
+                v += type_data.cost.vespene * worker_factor
+            else:
+                m += type_data.cost.minerals
+                v += type_data.cost.vespene
+
+        # print(f"total Wealth = {m} : {v}")
+        return m, v
 
     def draw_debug_line(self, p0: sc2.Union[Unit, Point2], p1: sc2.Union[Unit, Point2], color=None):
         if isinstance(p0, Unit):
