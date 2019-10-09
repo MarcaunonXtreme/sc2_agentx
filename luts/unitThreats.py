@@ -50,6 +50,9 @@ UNIT_THREAT_VALUE = {
 
 
 
+#TODO: improve my list of counters - a lot of improvement is still required
+# I think I have way to much stuff here, and should thin it out.
+
 # This list contains unit counters to also help in some calculations and so forth
 UNIT_HARD_COUNTERS = {
     UnitTypeId.ZERGLING : {UnitTypeId.BANELING, UnitTypeId.COLOSSUS, UnitTypeId.HELLION, UnitTypeId.HELLIONTANK},
