@@ -165,9 +165,9 @@ def calculate_distance_from_creep_edge(creep : PixelMap, on_creep=True, off_cree
 # If distance_from is False: Returns a map that only has the choke points marked.
 # Returns both this choke map and the labels map that is essentially a region map. (might be usefull?)
 # TODO: we can add a calculation that calculates the size of each label and output that also?
-# TODO: We can simplify each collection of gates into a single gate with a start and end location and calculate the width of the choke point
-# TODO: we can then also calculate the distance across the labels between these gates and from here have a relative idea how far regions are from each other from ground units
-def calculation_choke_points(pathing_grid : PixelMap, distance_from = True, map : np.ndarray = None):
+# TODO: maybe link gates in gate_list with labels?
+# TODO: maybe calculate distances between labels?
+def calculation_choke_points(pathing_grid : PixelMap, distance_from = True, map : np.ndarray = None, calculate_gate_list = False):
     if map is None:
         map = calculate_distance_from_unpathable(pathing_grid)
     if isinstance(pathing_grid, PixelMap):
@@ -188,12 +188,14 @@ def calculation_choke_points(pathing_grid : PixelMap, distance_from = True, map 
             neighbour_labels = [labels[y+dy,x+dx] for dy in (-1,0,1) for dx in (-1,0,1) if labels[y+dy,x+dx]]
             if len(neighbour_labels) > 0:
                 queue.append((y,x,neighbour_labels[0]))
-                if any(t != neighbour_labels[0] for t in neighbour_labels):
-                    gates.append((y,x))
-
+              
         while queue:
             ty,tx,l = queue.popleft()
             if not labels[ty,tx]:
+                neighbour_labels = [labels[ty+dy,tx+dx] for dy in (-1,0,1) for dx in (-1,0,1) if labels[ty+dy,tx+dx]]
+                if len(neighbour_labels) >= 2:
+                    if any(t != neighbour_labels[0] for t in neighbour_labels):
+                        gates.append((ty,tx))
                 labels[ty,tx] = l
                 for ny,nx in [(ty+dy,tx+dx) for dy in (-1,0,1) for dx in (-1,0,1) if not labels[ty+dy,tx+dx] and map[ty+dy,tx+dx] == depth]:
                     queue.append((ny,nx,l))
@@ -215,18 +217,15 @@ def calculation_choke_points(pathing_grid : PixelMap, distance_from = True, map 
 
     #print(f"Nr of LAbels = {next_label}")
 
-
     if distance_from:
         choke = flood_fill(pathing_grid, gates, lambda y,x,d,v : v)
     else:
         choke = np.zeros(map.shape, dtype=np.uint8)
         for gy,gx in gates:
-            for y,x in [(gy+a,gx+b) for a in (-1,0,1) for b in (-1,0,1)]:
-                choke[y,x] = 1
-
+            choke[gy,gx] = 1
 
     gate_list = []
-    if True:
+    if calculate_gate_list:
         #Calculate start and end points of gates (aka choke points)
         #Note this would be particularly usefull to determine where to build walls I hope.
         tmp = np.zeros(map.shape, dtype=np.uint8)
@@ -244,17 +243,13 @@ def calculation_choke_points(pathing_grid : PixelMap, distance_from = True, map 
                     tmp[ny,nx] = 1
                     queue.append((ny,nx))
                 #select tiles adjacent to "wall" as end_points
-                if any(pathing_grid[ty+dy,tx+dx] == 0 for dy in (-2,-1,0,1,2) for dx in (-2,-1,0,1,2)):
-                    end_points.append((ty,tx))
-                
-            if len(end_points) >= 2:
-                p1 = end_points[0]
-                dist = [abs(p1[0]-p2[0])+abs(p1[1]-p2[0]) for p2 in end_points[1:]]
-                p2 = end_points[np.argmax(dist)+1]
-                gate_list.append((p1,p2))
-            else:
-                print("Warning: Error with gate calculation?")
-
+                if any(pathing_grid[ty+dy,tx+dx] == 0 for dy in (-1,0,1) for dx in (-1,0,1)):
+                    #This is a point against a wall.
+                    good = not any(tmp[ty+dy,tx+dx] == 2 for dy in (-1,0,1) for dx in (-1,0,1))
+                    tmp[ty,tx] = 2
+                    if good:
+                        end_points.append((ty,tx))
+            gate_list.append(tuple(end_points))
 
     return choke, labels, gate_list
 
@@ -292,7 +287,7 @@ if __name__ == "__main__":
     pyplot.title("Choke Points")
     pyplot.imshow(chokes1)
 
-    chokes2, labels, gate_list = calculation_choke_points(testmap, True, map=distance_map)
+    chokes2, labels, gate_list = calculation_choke_points(testmap, True, map=distance_map, calculate_gate_list=True)
 
     for g in gate_list:
         p1 = g[0]
