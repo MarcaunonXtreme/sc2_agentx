@@ -170,6 +170,8 @@ def calculate_distance_from_creep_edge(creep : PixelMap, on_creep=True, off_cree
 def calculation_choke_points(pathing_grid : PixelMap, distance_from = True, map : np.ndarray = None):
     if map is None:
         map = calculate_distance_from_unpathable(pathing_grid)
+    if isinstance(pathing_grid, PixelMap):
+        pathing_grid = pathing_grid.data_numpy
 
     max_depth = np.max(map)
     labels = np.zeros(map.shape, dtype=np.int32)
@@ -215,8 +217,6 @@ def calculation_choke_points(pathing_grid : PixelMap, distance_from = True, map 
 
 
     if distance_from:
-        if isinstance(pathing_grid, PixelMap):
-            pathing_grid = pathing_grid.data_numpy
         choke = flood_fill(pathing_grid, gates, lambda y,x,d,v : v)
     else:
         choke = np.zeros(map.shape, dtype=np.uint8)
@@ -224,7 +224,39 @@ def calculation_choke_points(pathing_grid : PixelMap, distance_from = True, map 
             for y,x in [(gy+a,gx+b) for a in (-1,0,1) for b in (-1,0,1)]:
                 choke[y,x] = 1
 
-    return choke, labels
+
+    gate_list = []
+    if True:
+        #Calculate start and end points of gates (aka choke points)
+        #Note this would be particularly usefull to determine where to build walls I hope.
+        tmp = np.zeros(map.shape, dtype=np.uint8)
+        queue = deque()
+        for (y,x) in [(a,b) for a in range(8,map.shape[0]-8) for b in range(8,map.shape[1]-8) if choke[a,b] == 1]:
+            if tmp[y,x]:
+                continue
+            tmp[y,x] = 1
+            end_points = []
+            queue.append((y,x))
+            #Flood fill this section of "gates"
+            while queue:
+                ty,tx = queue.popleft()
+                for ny,nx in [(ty+dy,tx+dx) for dy in (-1,0,1) for dx in (-1,0,1) if not tmp[ty+dy,tx+dx] and choke[ty+dy,tx+dx] == 1]:
+                    tmp[ny,nx] = 1
+                    queue.append((ny,nx))
+                #select tiles adjacent to "wall" as end_points
+                if any(pathing_grid[ty+dy,tx+dx] == 0 for dy in (-2,-1,0,1,2) for dx in (-2,-1,0,1,2)):
+                    end_points.append((ty,tx))
+                
+            if len(end_points) >= 2:
+                p1 = end_points[0]
+                dist = [abs(p1[0]-p2[0])+abs(p1[1]-p2[0]) for p2 in end_points[1:]]
+                p2 = end_points[np.argmax(dist)+1]
+                gate_list.append((p1,p2))
+            else:
+                print("Warning: Error with gate calculation?")
+
+
+    return choke, labels, gate_list
 
 
 
@@ -254,13 +286,22 @@ if __name__ == "__main__":
     pyplot.title("Distance from unpathable")
     pyplot.imshow(distance_map)
 
-    chokes1, _ = calculation_choke_points(testmap, False, map=distance_map)
+    chokes1,_ , _ = calculation_choke_points(testmap, False, map=distance_map)
 
     pyplot.figure()
     pyplot.title("Choke Points")
     pyplot.imshow(chokes1)
 
-    chokes2, _ = calculation_choke_points(testmap, True, map=distance_map)
+    chokes2, labels, gate_list = calculation_choke_points(testmap, True, map=distance_map)
+
+    for g in gate_list:
+        p1 = g[0]
+        p2 = g[1]
+        print(f"Gate: {p1[0]},{p1[1]} == {p2[0]},{p2[1]}")
+
+    pyplot.figure()
+    pyplot.title("Area Labels")
+    pyplot.imshow(labels)
 
     pyplot.figure()
     pyplot.title("Distance from choke points")
