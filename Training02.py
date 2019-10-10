@@ -7,6 +7,8 @@ from sc2.units import Units
 from sc2.game_data import  UnitTypeData
 from sc2.position import Point2
 
+from sc2.dicts.unit_tech_alias import UNIT_TECH_ALIAS
+
 from sc2.constants import UnitTypeId
 
 from AgentBrain import AgentBrain
@@ -14,6 +16,7 @@ from TrainableAgent import TrainableAgent
 
 from MicroAgentC2 import MicroAgentC2
 
+from scenarios import *
 
 from copy import deepcopy
 import random
@@ -30,49 +33,85 @@ global_debug = True
 ## At the end of every scenario:
 ##
 
+def get_type_id(unit : Unit):
+    s = UNIT_TECH_ALIAS.get(unit.type_id,None)
+    if s:
+        return next(iter(s))
+    else:
+        return unit.type_id
+
+
 class XMem:
     def __init__(self, type_id, position = None):
         self.type_id : UnitTypeId = type_id
         self.position : Point2 = position
         self.tag = 0
+        self.amount = 0
 
 class TrainingData:
     def __init__(self, agent):
         self.agent = agent
-        self.xmem = []
+        self.xmem = [] # this is for structures
+        self.units = [] # also xmem but for scenario units
+        self.position : Point2 = Point2()
         self.natural_expansion = random.random() > 0.5
-        self.natural_expansion = True
 
 
 class TrainingMaster:
     def __init__(self, nr_brains = 30):
         self.players = [None, None]
-        self.setup_stage = 0
+        self.players_data = [None, None]
+
+
         self.round = 0
         self.end_time = 90.0
-        self.position = [[Point2(),Point2()],[Point2(),Point2()]]
-        self.battle_field_position : Point2 = None
+
+        self.got_positions = False
+        self.position = [Point2(),Point2()]
+        self.battle_field_position : Point2 = Point2()
+
         self.brains = []
         for nr in range(nr_brains):
             self.brains.append(AgentBrain.load(f"agents/agent_{nr}.p"))
 
 
-    def register_player(self, bot : sc2.BotAI):
+    def register_player(self, bot : (TrainableAgent, sc2.BotAI)):
+        bot.training_data = TrainingData(bot)
+
         if bot.player_id == 1:
             print("Player 1 registered")
             self.players[0] = bot
+            self.players_data[0] = bot.training_data
         else:
             assert bot.player_id == 2
             print("Player 2 registered")
             self.players[1] = bot
+            self.players_data[1] = bot.training_data
 
-        if self.players[0] is not None and self.players[1] is not None:
-            #do start-up things!
-            self.calculation_positions()
 
     @property
     def setup_in_progress(self):
         return self.players[0].setup_stage < 10 or self.players[1].setup_stage < 10
+
+
+    def setup_scenario_units(self):
+
+        keys = list(SCENARIOS1.keys())
+        amount = len(keys)
+        key = keys[random.randint(0,amount-1)]
+        scenario = SCENARIOS1[key]
+
+        for p in range(2):
+            data :TrainingData = self.players_data[p]
+
+            index = RACE_INDEX[self.players[p].race]
+
+            unit_list : list = scenario[index]
+
+            for units in unit_list:
+                tmp = XMem(units[0])
+                tmp.amount = random.randint(units[1],units[2])
+                data.units.append(tmp)
 
 
 
@@ -83,7 +122,7 @@ class TrainingMaster:
         #TODO: fix up starting positions so scouting isn't necessary
         #TODO: on 4-player maps fix this so that the bases gets moved to the corner locations
 
-        agent.training_data = TrainingData(agent)
+
         data : TrainingData = agent.training_data
 
         u :Unit
@@ -175,8 +214,8 @@ class TrainingMaster:
 
                 loc2 = exp_loc.towards(agent.game_info.map_center, 3)
                 loc = await agent.find_placement(UnitTypeId.PYLON, loc2)
-                assert loc
-                data.xmem.append(XMem(UnitTypeId.PYLON, loc))
+                if loc:
+                    data.xmem.append(XMem(UnitTypeId.PYLON, loc))
 
                 #TODO: an actual wall?
 
@@ -189,16 +228,14 @@ class TrainingMaster:
                 if random.random() > 0.6:
                     loc2 = exp_loc.towards(agent.game_info.map_center, 5)
                     loc = await agent.find_placement(UnitTypeId.PHOTONCANNON, loc2)
-                    assert loc
-                    data.xmem.append(XMem(UnitTypeId.PHOTONCANNON, loc))
+                    if loc:
+                        data.xmem.append(XMem(UnitTypeId.PHOTONCANNON, loc))
 
 
         else:
             raise NotImplementedError
 
-        await self.repair_setup(agent)
-
-        #Upgrade levels:
+           #Upgrade levels:
         upgrade_level = random.randint(0,3)
         print(f"Upgrade Level for agent = {upgrade_level}")
         for i in range(upgrade_level):
@@ -211,12 +248,26 @@ class TrainingMaster:
         for s in data.xmem:
             unit : Unit = None if s.tag == 0 else agent.structures.find_by_tag(s.tag)
             if not unit:
-                # Maybe the building already exist?
-                unit = agent.structures.closest_to(s.position)
-                if unit.type_id == s.type_id and unit.distance_to(s.position) < 2.0:
-                    s.tag = unit.tag
+
+                if s.type_id in [UnitTypeId.CREEPTUMORBURROWED, UnitTypeId.CREEPTUMOR, UnitTypeId.CREEPTUMORQUEEN]:
+                    #find it:
+                    all_tumors = agent.structures.filter(lambda u: u.type_id in [UnitTypeId.CREEPTUMORBURROWED, UnitTypeId.CREEPTUMOR, UnitTypeId.CREEPTUMORQUEEN])
+                    if all_tumors:
+                        unit = all_tumors.closest_to(s.position)
+                        if unit.distance_to(s.position) < 4.0:
+                            s.tag = unit.tag
+                        else:
+                            unit = None
                 else:
-                    unit = None
+                    # Maybe the building already exist?
+                    all_of_type = agent.structures.filter(lambda u: get_type_id(u) == s.type_id or u.type_id == s.type_id)
+                    if all_of_type:
+                        unit = all_of_type.closest_to(s.position)
+                        if (get_type_id(unit) == s.type_id or unit.type_id == s.type_id)  and unit.distance_to(s.position) < 5.0:
+                            s.tag = unit.tag
+                        else:
+                            unit = None
+
             if unit:
                 #magically repair existing building
                 await agent.client.debug_set_unit_value(unit, 1, value=unit.energy_max)
@@ -229,16 +280,6 @@ class TrainingMaster:
                 print(f"Creating {s.type_id} -> {s.position}")
                 await agent.client.debug_create_unit([[s.type_id, 1, s.position, agent.player_id]])
 
-    #this doesn't seem to work unfortunately.
-    def new_building(self, agent: TrainableAgent, unit: Unit):
-        #see if this links to one of our xmem structures?
-        data: TrainingData = agent.training_data
-        s: XMem
-        for s in data.xmem:
-            if s.tag == 0 and s.type_id == unit.type_id:
-                if unit.distance_to(s.position) < 2.0:
-                    print("found xmem building")
-                    s.tag = unit.tag
 
 
     def end_map_now(self):
@@ -366,86 +407,69 @@ class TrainingMaster:
 
 
     def check_scenario_end(self,agent :sc2.BotAI):
-        th : Unit = agent.townhalls[0]
-        if th.health_percentage < 0.99:
-            #TODO: in advanced mode maybe we can hide a floating CC in the corner of the map to avoid triggering the game ending when the townhall dies?
-            print("Townhall damaged - ending scenario")
-            self.end_scenario_now( self.end_time - agent.time )
-        elif agent.time >= self.end_time:
+
+        if agent.time >= self.end_time:
             print("Scenario ended due to time limit")
             self.end_scenario_now( self.end_time - agent.time  )
-        elif agent.death_struct_tag == -1:
-             print("Fallback position destroyed, ending scenario")
-             self.end_scenario_now( self.end_time - agent.time )
-        else:
-            if len(agent.units) < 10:
-                cnt = agent.units.filter(lambda u: u.type_id not in [UnitTypeId.EGG, UnitTypeId.LARVA, UnitTypeId.MULE, UnitTypeId.BROODLING, UnitTypeId.CREEPTUMOR, UnitTypeId.CREEPTUMORBURROWED])
-                if len(cnt) <= 0:
-                    print("Units lost, ending scenario")
-                    self.end_scenario_now( self.end_time - agent.time )
+        if len(agent.structures) <= 2:
+            print("Agent lost too many buildings!")
+            self.end_scenario_now(self.end_time - agent.time)
+        elif len(agent.units) < 16:
+            #See if combat units are all gone?
+            cnt = agent.units.filter(lambda u: u.type_id not in [UnitTypeId.EGG, UnitTypeId.LARVA, UnitTypeId.MULE, UnitTypeId.BROODLING, UnitTypeId.CREEPTUMOR, UnitTypeId.CREEPTUMORBURROWED])
+            if len(cnt) <= 0:
+                print("Units lost, ending scenario")
+                self.end_scenario_now( self.end_time - agent.time )
 
 
-    def get_pos(self, agent: sc2.BotAI, pos_nr = 0) -> Point2:
-        if agent.player_id == 1:
-            return self.position[0][pos_nr]
-        else:
-            return self.position[1][pos_nr]
 
     def calculation_positions(self):
 
+        #TODO: majorly improve this crap
+
         centre: Point2 = self.players[0].game_info.map_center
 
-        self.position[0][0] = centre.towards(self.players[0].start_location, 15)
-        self.position[0][1] = centre.towards(self.players[0].start_location, 25)
+        self.position[0] = centre.towards(self.players[0].start_location, 15)
 
-        self.position[1][0] = centre.towards(self.players[1].start_location, 15)
-        self.position[1][1] = centre.towards(self.players[1].start_location, 25)
+        self.position[1] = centre.towards(self.players[1].start_location, 15)
 
         for i in range(2):
-            for j in range(2):
-                pos = self.position[i][j]
-                self.position[i][j] = pos.rounded
+            pos = self.position[i]
+            self.position[i] = pos.rounded
+            self.players_data[i].position = pos.rounded
 
-        self.battle_field_position = (self.position[0][0] + self.position[1][0]) / 2.0
-        self.battle_field_position = self.battle_field_position.rounded
+        self.battle_field_position = centre.rounded
+        self.got_positions = True
 
-    async def create_buildings(self, agent: sc2.BotAI):
-        pos = self.get_pos(agent, pos_nr=1)
+    async def create_scenario_units(self, agent, data):
+        pos: Point2 = data.position.rounded
 
-        for u in agent.structures:
-            if u.type_id in [UnitTypeId.CREEPTUMORBURROWED, UnitTypeId.GREATERSPIRE, UnitTypeId.FUSIONCORE, UnitTypeId.PYLON, UnitTypeId.FLEETBEACON]:
-                await agent.client.debug_kill_unit(u)
-
-        # Note: not sure this is really workable?
-        if agent.race == Race.Zerg:
-            # We create some static D around the hatchery so that the AI can't learn to just target this first or run around or something
-            await agent.client.debug_create_unit([[UnitTypeId.CREEPTUMORBURROWED, 2,pos, agent.player_id]])
-            #await agent.client.debug_create_unit([[UnitTypeId.GREATERSPIRE, 1, pos, agent.player_id]])
-        elif agent.race == Race.Terran:
-            #await agent.client.debug_create_unit([[UnitTypeId.FUSIONCORE, 1, pos, agent.player_id]])
-            pass
-        elif agent.race == Race.Protoss:
-            #await agent.client.debug_create_unit([[UnitTypeId.PYLON, 1, pos, agent.player_id]])
-            #await agent.client.debug_create_unit([[UnitTypeId.FLEETBEACON, 1, pos, agent.player_id]])
-            pass
-        else:
-            raise NotImplementedError
+        print("Creating units...")
+        x : XMem
+        for x in data.units:
+            await agent.client.debug_create_unit([[x.type_id, x.amount, pos, agent.player_id]])
 
 
-    async def setup_scenario(self, agent :sc2.BotAI):
+    async def setup_scenario(self, agent : (TrainableAgent, sc2.BotAI)):
         assert isinstance(agent, TrainableAgent)
         assert isinstance(agent, sc2.BotAI)
+        assert isinstance(self.players_data[0], TrainingData)
+        assert isinstance(self.players_data[1], TrainingData)
         #print(f"Player {agent.player_id} setup stage = {agent.setup_stage}")
+        if not self.got_positions:
+            self.calculation_positions()
+            self.setup_scenario_units()
+
+        data : TrainingData = agent.training_data
+
         if agent.setup_stage == 0:
             #load checkpoint:
             if agent.player_id == 1:
                 print("== STARTING NEW SCENARIO ==")
 
-            #setup fallback position
-            await self.create_buildings(agent)
 
-            if agent.player_id == 1:
-                # select new brain for player 1
+            if not isinstance(agent, Protagonist):
+                # Non Protagonist gets brain :)
                 chosen = None
                 for b in self.brains:
                     if b.used == 0:
@@ -454,87 +478,54 @@ class TrainingMaster:
                 assert chosen
                 agent.use_brain(chosen)
 
-            else:
-                # player 2 don't get a new brain as it's the protagonist
-                pass
 
-            #clear old stuff:
             await agent.client.debug_fast_build()
+            # clear old units:
             if agent.units:
                 await agent.client.debug_kill_unit(agent.units)
-
-            #TODO: call agent reset to clear memory and other things?
-            #Note: not sure how to clear buildings that was remembered etc?
 
             agent.setup_stage = 1
 
         if agent.setup_stage == 1:
-            # Wait for all old units to be removed
 
+            # Wait for all old units to be removed
             if len(agent.units.filter(lambda u: u.type_id not in [UnitTypeId.LARVA, UnitTypeId.EGG])) == 0:
                 agent.setup_stage = 2
 
-
         if agent.setup_stage == 2:
+
+            #repair buildings
+            await self.repair_setup(agent)
             agent.setup_stage = 3
-            # Enable fast build so that we can quickly up the tech tree etc as necessary
 
-            #make sure all broodlings from destroyed buildings go away
-            garbage = agent.units.filter(lambda u: u.type_id in [UnitTypeId.BROODLING, UnitTypeId.BROODLINGESCORT, UnitTypeId.EGG, UnitTypeId.LARVA, UnitTypeId.MULE, UnitTypeId.AUTOTURRET, UnitTypeId.INFESTEDTERRAN, UnitTypeId.LOCUSTMPFLYING, UnitTypeId.LOCUSTMP])
-            if garbage:
-                await agent.client.debug_kill_unit(garbage)
+        if agent.setup_stage == 3:
 
-            #TODO: pick 2 different locations on map each time rather than same locations every time!
-            pos = self.get_pos(agent)
-            #TODO: implement actual scenarios
-            if agent.race == Race.Zerg:
-                #await agent.client.debug_create_unit([[UnitTypeId.ZERGLING, 10, pos, agent.player_id]])
-                #await agent.client.debug_create_unit([[UnitTypeId.BANELING, 3, pos, agent.player_id]])
-                await agent.client.debug_create_unit([[UnitTypeId.ROACH, 12, pos, agent.player_id]])
-            elif agent.race == Race.Terran:
-                await agent.client.debug_create_unit([[UnitTypeId.MARINE, 12, pos, agent.player_id]])
-                await agent.client.debug_create_unit([[UnitTypeId.MARAUDER, 4, pos, agent.player_id]])
-            elif agent.race == Race.Protoss:
-                #await agent.client.debug_create_unit([[UnitTypeId.ZEALOT, 4, pos, agent.player_id]])
-                await agent.client.debug_create_unit([[UnitTypeId.STALKER, 12, pos, agent.player_id]])
-            else:
-                raise NotImplementedError
+            await self.create_scenario_units(agent,data)
 
             #set target location
             agent.enemy_location_0 = self.battle_field_position
+            agent.setup_stage = 4
 
-        if agent.setup_stage == 3:
+        if agent.setup_stage == 4:
             #Wait for created units and structures to spawn
             #Note: require at least 3 units always to progress
             if len(agent.units.filter(lambda u: u.type_id not in [UnitTypeId.LARVA, UnitTypeId.EGG])) >= 3:
-                agent.setup_stage = 4
-
-                #repair buildings:
-                for u in agent.structures:
-                    if u.health < u.health_max:
-                        await agent.client.debug_set_unit_value(u, 2, value=u.health_max)
-
-        if agent.setup_stage == 4:
-            agent.setup_stage = 5
-            # First round of upgrades
+                agent.setup_stage = 5
 
         if agent.setup_stage == 5:
             agent.setup_stage = 6
-            # Second round of upgrades
+
 
         if agent.setup_stage == 6:
             agent.setup_stage = 7
-            # Second round of upgrades
-            agent.setup_wait = 16
 
+            agent.setup_wait = 11
 
         if agent.setup_stage == 7:
             agent.setup_wait -= 1 # A little bit of a delay to make sure all broodlings spawned so we can delete them again
             if agent.setup_wait > 0:
                 return
 
-            agent.setup_stage = 8
-            # Third round of upgrades
 
 
             #Kill garbage/temp units here to not interfere
@@ -542,10 +533,15 @@ class TrainingMaster:
             if garbage:
                 await agent.client.debug_kill_unit(garbage)
 
+            agent.setup_stage = 8
+            # Third round of upgrades
+
         if agent.setup_stage == 8:
-            agent.setup_stage = 100
+            # Final stage
+
             # Set unit energy levels
 
+            #activate brain:
             b = agent.get_brain()
             if b:
                 b.used += 1 # brain is being used now!
@@ -553,17 +549,15 @@ class TrainingMaster:
             #Disable fast build:
             await agent.client.debug_fast_build()
 
-            #Find the "death building": (in this case the base)
-            agent.death_struct_tag = agent.townhalls[0].tag
-
             #determine start wealth:
             m, v = agent.calculate_wealth()
             agent.start_wealth = m + v*1.5
-            self.end_time = agent.time + 45.0 # 45 seconds is more than enough time
+            self.end_time = agent.time + 60.0 # 60 seconds is more than enough time
             #print(f"player {agent.player_id} scenario start wealth = {agent.start_wealth}")
 
             #Maybe give units commands
             #GO!
+            agent.setup_stage = 100
 
 
 
@@ -571,9 +565,9 @@ class TrainingMaster:
 #this class can inherit anything but must eventually inherit sc2.BotAI to be a bot
 class BotInTraining(MicroAgentC2, TrainableAgent):
     def __init__(self, master , *args):
-        super(BotInTraining,self).__init__(*args)
+        MicroAgentC2.__init__(self, *args)
+        TrainableAgent.__init__(self)
         self.master : TrainingMaster = master
-
 
         #disable macro and set training mode tactics for now
         self.disable_macro = True
@@ -609,7 +603,6 @@ class BotInTraining(MicroAgentC2, TrainableAgent):
 
     async def on_building_construction_complete(self, unit: Unit):
         print("New building popped up!!")
-        self.master.new_building(self,unit)
         await super(BotInTraining, self).on_building_construction_complete(unit)
 
 
@@ -640,6 +633,6 @@ map_name = random.choice(map_names)
 print(f"Loading map = {map_name}")
 
 run_game(maps.get(map_name), [
-    Bot(Race.Terran, Protagonist(the_master)),
-    Bot(Race.Terran, Protagonist(the_master)),
+    Bot(Race.Random, Protagonist(the_master)),
+    Bot(Race.Random, Protagonist(the_master)),
 ], realtime=global_debug)

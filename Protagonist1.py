@@ -16,17 +16,16 @@ from BaseAgentA1 import BaseAgentA1
 
 class Protagonist(BaseAgentA1, TrainableAgent):
     def __init__(self, master, *args):
-        super(Protagonist,self).__init__(*args)
+        BaseAgentA1.__init__(self, *args)
+        TrainableAgent.__init__(self)
         self.master  = master
         self.brain = AgentBrain()
-
-
 
         # disable macro and set training mode tactics for now
         self.disable_macro = True
         self.enemy_location_0 : Point2 = None
 
-
+        self.do_it = False
 
     async def on_start(self):
         self.master.register_player(self)
@@ -47,7 +46,6 @@ class Protagonist(BaseAgentA1, TrainableAgent):
 
     async def on_building_construction_complete(self, unit: Unit):
         print("New building popped up!!")
-        self.master.new_building(self,unit)
         await super(Protagonist, self).on_building_construction_complete(unit)
 
     async def on_upgrade_complete(self, upgrade):
@@ -64,25 +62,13 @@ class Protagonist(BaseAgentA1, TrainableAgent):
             self.do_it = True
             return
 
-        return
         if self.master.setup_in_progress:
             #setup is in progress
             await self.master.setup_scenario(self)
             self.do_it = True
         else:
-            if self.do_it:
-                self.do_it = False
-                u : Unit
-                for u in self.units:
-                    self.do(u.attack(self.enemy_location_0))
-
-            death_struct = self.structures.find_by_tag(self.death_struct_tag)
-            if death_struct and not self.protect:
-                if death_struct.health < death_struct.health_max:
-                    self.protect = True
-                    for u in self.units:
-                        self.do(u.attack(death_struct.position))
-
+            #TODO: implement this Protagonist's code
+            pass
 
             # Check if scenario ended?
             self.master.check_scenario_end(self)

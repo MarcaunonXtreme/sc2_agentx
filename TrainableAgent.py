@@ -8,8 +8,8 @@ from sc2.position import Point2
 class TrainableAgent:
 
     def __init__(self):
-        self.enemy_location_0 : Point2 = Point2((32,32))
         self.training_data = None
+        self.setup_stage = 0
 
     #Set a new brain to use
     def use_brain(self, brain : AgentBrain):
