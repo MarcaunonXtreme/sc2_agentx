@@ -8,8 +8,13 @@ from sc2.position import Point2
 from sc2.unit import Unit
 from sc2.constants import UnitTypeId
 
+import Flood
+import pickle
 
-class Protagonist(sc2.BotAI, TrainableAgent):
+from BaseAgentA1 import BaseAgentA1
+
+
+class Protagonist(BaseAgentA1, TrainableAgent):
     def __init__(self, master, *args):
         super(Protagonist,self).__init__(*args)
         self.master  = master
@@ -27,6 +32,18 @@ class Protagonist(sc2.BotAI, TrainableAgent):
         self.master.register_player(self)
         self.enemy_location_0 = self.game_info.map_center
         await super(Protagonist,self).on_start()
+
+        # if self.player_id == 1:
+        #     distance_from = Flood.calculate_distance_from_unpathable(self.game_info.pathing_grid)
+        #     with open("dist_from1.p","wb") as f:
+        #         pickle.dump(distance_from, f)
+        #
+        #     choke, labels, _ = Flood.calculation_choke_points(self.game_info.pathing_grid, distance_from=False , map=distance_from)
+        #     with open("choke_points.p","wb") as f:
+        #         pickle.dump(choke, f)
+        #     with open("areas1.p", "wb") as f:
+        #         pickle.dump(labels, f)
+
 
     async def on_building_construction_complete(self, unit: Unit):
         print("New building popped up!!")

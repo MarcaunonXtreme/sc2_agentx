@@ -19,6 +19,8 @@ from sc2.units import Units
 from sc2.dicts.upgrade_researched_from import UPGRADE_RESEARCHED_FROM
 from sc2.dicts.unit_trained_from import UNIT_TRAINED_FROM
 
+import Flood
+
 import pickle
 
 race_supply = {
@@ -135,7 +137,6 @@ class BaseAgentA1(sc2.BotAI):
 
 
 
-
     def __init__(self):
         super(BaseAgentA1,self).__init__()
         self.debug = False
@@ -156,6 +157,13 @@ class BaseAgentA1(sc2.BotAI):
         #indices gets increased when buildings are finished and decreased if they get destroyed
         self.got_structure = np.zeros(2048, dtype=np.uint8)
 
+        #will be filled in a bit later
+        self.distance_from_wall = None
+        self.distance_from_choke = None
+        self.main_base_area = None
+        self.natural_base_area = None
+        self.natural_wall_ramp_area = None
+
     async def on_start(self):
         #print(">on_start<")
         self.is_zerg = (self.race == sc2.Race.Zerg)
@@ -170,6 +178,22 @@ class BaseAgentA1(sc2.BotAI):
 
         # Set game step here:
         self._client.game_step = 2
+
+        #In order to do natural ramps and other things lets compute this:
+        self.main_base_area = Flood.calculate_base_plateau(self.game_info.placement_grid, self.start_location.rounded, max_dist=24)
+
+        natural_loc = await self.get_next_expansion()
+        self.natural_base_area = Flood.calculate_base_plateau(self.game_info.placement_grid, natural_loc.rounded, max_dist=32)
+        # self.distance_from_wall = Flood.calculate_distance_from_unpathable(self.game_info.pathing_grid)
+        # self.distance_from_choke, _ , _ = Flood.calculation_choke_points(self.game_info.pathing_grid,distance_from=True,map=self.distance_from_wall)
+        #
+        # #natural wall is a bit tricky:
+        # self.natural_wall_ramp_area = self.natural_base_area * self.distance_from_choke
+        # self.natural_wall_ramp_area += (self.natural_wall_ramp_area==0)*250
+
+        #with open("wall_ramp.p","wb") as f:
+        #    pickle.dump(self.natural_wall_ramp_area, f)
+
 
     def already_pending(self, unit_type: sc2.Union[UpgradeId, UnitTypeId]) -> int:
 
@@ -567,7 +591,7 @@ class BaseAgentA1(sc2.BotAI):
     #TODO: lotsa improvements and upgrades required!
     async def find_structure_placement(self, building_id, location_hint):
         # lets just support zerg for now
-        assert location_hint == 0  # others not yet supported
+        #assert location_hint == 0  # others not yet supported
 
 
         if building_id in [UnitTypeId.EXTRACTOR, UnitTypeId.REFINERY, UnitTypeId.ASSIMILATOR]:
@@ -589,6 +613,29 @@ class BaseAgentA1(sc2.BotAI):
             ability_id = self._game_data.units[building_id.value].creation_ability
         else:
             ability_id = building_id
+
+
+        # if location_hint == BaseAgentA1.LOCATION_HINT_NATURAL:
+        #     # TODO: improve this GREATLY but it's a start:
+        #     m = np.min(self.natural_wall_ramp_area)
+        #     location_list = []
+        #     tmp_locs = np.where(self.natural_wall_ramp_area < (m+8))
+        #     #TODO: the allowed variable below should be used!
+        #     for y,x in zip(tmp_locs[0], tmp_locs[1]):
+        #         loc = Point2((x,y))
+        #         location_list.append(loc)
+        #
+        #     #Query it all
+        #     res = await self._client.query_building_placement(ability_id, location_list)
+        #     possible_locations = [p for r, p in zip(res, location_list) if r == sc2.ActionResult.Success]
+        #     print(possible_locations)
+        #
+        #     #Find the "best" one:
+        #     score = [self.distance_from_choke[loc[1],loc[0]] + self.distance_from_wall[loc[1],loc[0]]*0.01 for loc in possible_locations]
+        #     loc = possible_locations[np.argmin(score)]
+        #     print(f"Ramp loc = {loc}")
+        #     return loc
+
 
         #This does a random search around the base currently, not great but it's something and can probably fit a few buildings
         while True:

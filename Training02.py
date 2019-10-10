@@ -41,6 +41,7 @@ class TrainingData:
         self.agent = agent
         self.xmem = []
         self.natural_expansion = random.random() > 0.5
+        self.natural_expansion = True
 
 
 class TrainingMaster:
@@ -150,6 +151,8 @@ class TrainingMaster:
                     loc = await agent.find_placement(UnitTypeId.BUNKER, loc)
                     assert loc
                     data.xmem.append(XMem(UnitTypeId.BUNKER, loc))
+
+
 
         elif agent.race == Race.Protoss:
 
@@ -635,7 +638,8 @@ map_names = [
 ]
 map_name = random.choice(map_names)
 print(f"Loading map = {map_name}")
+
 run_game(maps.get(map_name), [
-    Bot(Race.Random, Protagonist(the_master)),
-    Bot(Race.Random, Protagonist(the_master)),
+    Bot(Race.Terran, Protagonist(the_master)),
+    Bot(Race.Terran, Protagonist(the_master)),
 ], realtime=global_debug)

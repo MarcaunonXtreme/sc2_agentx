@@ -157,13 +157,14 @@ def calculate_distance_from_creep_edge(creep : PixelMap, on_creep=True, off_cree
 
 
 # This algorithm can calculate choke point information on the map!
-#   This is usefull for building walls and for setting up defensive tactical positions and for general micro play.
+#   This is useful for building walls and for setting up defensive tactical positions and for general micro play.
 # Warning: This algorithm is SLOW! should probably only be executed once at start of game! approaching O(n**3) 
 # Reference: https://pdfs.semanticscholar.org/8d80/6103834ad73cdb2ca2714dd13531dba7d8b0.pdf
 #   (Although I had to adapt it quite a bit to work)
 # If distance_from is True: Returns a map that calculated the distances from choke point tile 
 # If distance_from is False: Returns a map that only has the choke points marked.
 # Returns both this choke map and the labels map that is essentially a region map. (might be usefull?)
+# TODO: it might be worth removing units/buildings from the pathing_grid optionally to get a clear version of this?
 # TODO: we can add a calculation that calculates the size of each label and output that also?
 # TODO: maybe link gates in gate_list with labels?
 # TODO: maybe calculate distances between labels?
