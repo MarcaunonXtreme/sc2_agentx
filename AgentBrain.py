@@ -2,6 +2,8 @@ import numpy as np
 
 import pickle
 
+from sc2 import Race
+
 # An agent brain is a collection of networks that can be used to make decisions with
 
 
@@ -19,17 +21,15 @@ class Network:
         self.w1 /= 8.0
         self.b1 = np.random.randn(max_outputs)
         self.b1 /= 16.0
-        self.count = 0
+        self.generation = 0
         self.scenario_count = 0
         self.score = 0
+        self.stars = 0
 
     def process(self, inputs_values):
         assert inputs_values.ndim == 1
-        assert len(inputs_values) <= self.inputs
+        assert len(inputs_values) == self.inputs
         tmp = inputs_values
-        if len(inputs_values) < self.inputs:
-            p = self.inputs - len(inputs_values)
-            tmp = np.pad(inputs_values, (0, p))
         #first dense layer:
         tmp = np.matmul(tmp, self.w0)
         tmp = np.add(tmp, self.b0)
@@ -41,7 +41,6 @@ class Network:
         #Linear output
         assert tmp.ndim == 1
         assert len(tmp) == self.outputs
-        self.count += 1
         return tmp
 
 
@@ -66,25 +65,39 @@ class AgentBrain:
 
     def __init__(self, filename = "brain.p"):
         self.default_filename = filename
-        self.networks = dict()
-        self.used = 0 #deprecated
-        self.scenario_count = 0
-        self.score = 0
+        self.networks = {Race.Zerg : dict(), Race.Terran : dict(), Race.Protss : dict()}
 
-    def get_network(self, name, max_inputs, max_outputs, hidden_count=24) -> Network:
-        if name in self.networks:
-            result = self.networks[name]
+
+    def get_network(self, race, name, max_inputs, max_outputs, hidden_count=24) -> Network:
+        nets = self.networks[race]
+        assert isinstance(nets,dict)
+        if name in nets:
+            result = nets[name]
         else:
             result = Network(max_inputs, max_outputs=max_outputs, hidden_count=hidden_count)
-            self.networks[name] = result
+            nets[name] = result
+
         #TODO: deal better with this
         assert result.inputs >= max_inputs
         assert result.outputs >= max_outputs
         #TODO: check or increase hidden also?
         return result
 
-    def has_network(self, name):
-        return name in self.networks
+    def has_network(self, race, name):
+        return name in self.networks[race]
+
+    # this assigns score to all networks 
+    def score_networks(self, race, network_names : list, score):
+        nets = self.networks[race]
+        for n in network_names:
+            if n in nets:
+                nets[n].score = score
+
+    def delete_network(self, race, name):
+        print(f"Deleting network {race}:{name} from brain")
+        nets = self.networks[race]
+        if name in nets:
+            del name[nets]
 
     def save(self, filename):
         if not filename:

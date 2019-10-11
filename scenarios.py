@@ -3,6 +3,7 @@
 
 from sc2.constants import UnitTypeId
 from sc2 import Race
+from collections import namedtuple
 
 # These scenarios atm do not include special situations like for harassing drones and defending cannon rush etc.
 
@@ -81,10 +82,36 @@ SCENARIOS1 = {
 
 }
 
+SCENARIO_TYPE_OPEN = 1
+SCENARIO_TYPE_DEFENSE = 2
+SCENARIO_TYPE_ATTACK = 3
+SCENARIO_TYPE_HARASS_DEFENSE = 4
+SCENARIO_TYPE_HARASS_ATTACK = 5
 
-#TODO: a test program that analyze the cost comparison of these setups against each other and prints summary
-# this would greatly help me tweak the training setups to be more useful
 
+# scenario_type = one of the above constants
+# p1 = RaceTyple for player 1 (under training)
+# p2 = RaceTuple for player 2 (protagonist) - or None in which case p1 is used
+# networks = List[Network names that gets trained here]
+# level = a value between 1 and 10 scaling how advanced this is. (influences some training stuff)
+
+Scenario = namedtuple('Scenario',['scenario_type','p1','p2','networks', 'level'])
+RaceTuple = namedtuple('RaceTyple',['zerg','terran','protoss'])
+ScUnits = namedtuple('ScUnits',['type_id','min','max'])
+
+
+SCENARIOS2 =[
+    Scenario(SCENARIO_TYPE_OPEN,
+        p1 = RaceTuple(
+            zerg = [ScUnits(UnitTypeId.ZERGLING, 8,16)], #Zerg
+            terran = [ScUnits(UnitTypeId.MARINE, 4,8)], #Terran
+            protoss = [ScUnits(UnitTypeId.ZEALOT, 2,4)] ), #Protoss,
+        p2 = None, #Same as p1 in this case
+        networks = [],
+        level = 1
+    )
+
+]
 
 
 
