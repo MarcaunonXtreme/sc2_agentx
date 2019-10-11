@@ -235,7 +235,7 @@ class TrainingMaster:
         else:
             raise NotImplementedError
 
-           #Upgrade levels:
+        #Upgrade levels:
         upgrade_level = random.randint(0,3)
         print(f"Upgrade Level for agent = {upgrade_level}")
         for i in range(upgrade_level):
