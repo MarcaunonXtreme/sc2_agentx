@@ -22,6 +22,9 @@ from copy import deepcopy
 import random
 import numpy as np
 
+from MapInfo import MapInfo
+import Flood
+
 from Protagonist1 import Protagonist
 
 global_debug = True
@@ -66,7 +69,7 @@ class TrainingMaster:
         self.round = 0
         self.end_time = 90.0
 
-        self.got_positions = False
+        self.scenario_setup_done = False
         self.position = [Point2(),Point2()]
         self.battle_field_position : Point2 = Point2()
 
@@ -75,6 +78,8 @@ class TrainingMaster:
             self.brains.append(AgentBrain.load(f"agents/agent_{nr}.p"))
 
         self.scenario : Scenario = None
+
+        self.dist_from_walls : np.ndarray = None
 
     def register_player(self, bot : (TrainableAgent, sc2.BotAI)):
         bot.training_data = TrainingData(bot)
@@ -89,41 +94,16 @@ class TrainingMaster:
             self.players[1] = bot
             self.players_data[1] = bot.training_data
 
+        if bot.player_id == 1:
+            map_info = MapInfo(bot.game_info.map_name, bot)
+            self.dist_from_walls = map_info.dist_from_wall
+
 
     @property
     def setup_in_progress(self):
         return self.players[0].setup_stage < 10 or self.players[1].setup_stage < 10
 
 
-
-
-    def setup_scenario_units(self):
-
-        good_sc = False
-        while not good_sc:
-            self.scenario : Scenario = random.choice(SCENARIOS2)
-
-            pp = list()
-            pp.append(get_race_scunits(self.scenario, 1, self.players[0].race))
-            pp.append(get_race_scunits(self.scenario, 2, self.players[1].race))
-
-            if pp[0] is not None and pp[1] is not None:
-                if len(pp[0]) > 0 and len(pp[1]) > 0:
-                    good_sc = True
-
-
-        for p in range(2):
-            unit_list : list = pp[p]
-            assert isinstance(unit_list, list) and len(unit_list) > 0
-
-            data :TrainingData = self.players_data[p]
-
-            units : ScUnits
-            for units in unit_list:
-                assert isinstance(units, ScUnits)
-                tmp = XMem(units.type_id)
-                tmp.amount = random.randint(units.min,units.max)
-                data.units.append(tmp)
 
 
     async def step0_setup(self, agent : (TrainableAgent, sc2.BotAI)):
@@ -349,6 +329,9 @@ class TrainingMaster:
                 if s <= -6:
                     kill.append(b)
 
+            stars = [b.get_stars(race, network_name) for b in self.brains]
+            f.write(f"Stars {network_name}: {stars}\r\n")
+
             best_networks = [b for b in self.brains if b.get_score(race, network_name) >= 2]
             if len(best_networks) == 0:
                 best_networks = [b for b in self.brains if b.get_score(race, network_name) >= 0]
@@ -435,7 +418,7 @@ class TrainingMaster:
         # But what if agents are race specific or other things.
         # Better is to play multiple different agents on the same scenario and then compare to average score.
 
-
+        self.scenario_setup_done = False # trigger new scenario setup
 
 
 
@@ -459,26 +442,92 @@ class TrainingMaster:
 
     def calculation_positions(self):
 
-        #TODO: majorly improve this crap
+        print("Calculating new scenario position...")
+        agent: sc2.BotAI = self.players[0]
+        assert isinstance(agent, sc2.BotAI)
 
-        centre: Point2 = self.players[0].game_info.map_center
+        # Find a position in an open space:
+        pos_good = False
+        while not pos_good:
+            y = random.randint(4, self.dist_from_walls.shape[0]-5)
+            x = random.randint(4, self.dist_from_walls.shape[1]-5)
+            pos = Point2((x,y))
 
-        self.position[0] = centre.towards(self.players[0].start_location, 15)
+            if self.dist_from_walls[y,x] >= 4 and agent.in_pathing_grid(pos):
+                #TODO: must check to be far enough from walls?
+                pos_good = True
 
-        self.position[1] = centre.towards(self.players[1].start_location, 15)
+        self.battle_field_position = pos
+
+        # Find 2 spots away from this point towards each players base
+        tmpx = Flood.flood_fill( agent.game_info.pathing_grid.data_numpy, pos, lambda y,x,d,v : v and d <= 15 )
+
+        best1 = 1000
+        best2 = 1000
+
+        # find coordinates 15 away from battle location closest to player start zones
+        coords = np.where(tmpx >= 15)
+        for y, x in zip(coords[0], coords[1]):
+            p : Point2 = Point2((x,y))
+            assert tmpx[y,x] >= 15 and agent.in_pathing_grid(p)
+
+            dist1 = p.distance_to(self.players[0].start_location)
+            if dist1 < best1:
+                best1 = dist1
+                self.position[0] = p
+
+            dist2 = p.distance_to(self.players[1].start_location)
+            if dist2 < best2:
+                best2 = dist2
+                self.position[1] = p
+
 
         for i in range(2):
-            pos = self.position[i]
-            self.position[i] = pos.rounded
-            self.players_data[i].position = pos.rounded
+            p = self.position[i].rounded
+            self.position[i] = p
+            self.players_data[i].position = p
 
-        self.battle_field_position = centre.rounded
-        self.got_positions = True
+        self.scenario_setup_done = True
+
+
+    def setup_scenario_units(self):
+
+        print("Setting up units for new scenario...")
+
+        good_sc = False
+        while not good_sc:
+            self.scenario : Scenario = random.choice(SCENARIOS2)
+
+            pp = list()
+            pp.append(get_race_scunits(self.scenario, 1, self.players[0].race))
+            pp.append(get_race_scunits(self.scenario, 2, self.players[1].race))
+
+            if pp[0] is not None and pp[1] is not None:
+                if len(pp[0]) > 0 and len(pp[1]) > 0:
+                    good_sc = True
+
+
+        for p in range(2):
+
+            unit_list : list = pp[p]
+            assert isinstance(unit_list, list) and len(unit_list) > 0
+
+            data :TrainingData = self.players_data[p]
+            data.units = []
+
+            units : ScUnits
+            for units in unit_list:
+                assert isinstance(units, ScUnits)
+                tmp = XMem(units.type_id)
+                tmp.amount = random.randint(units.min,units.max)
+                data.units.append(tmp)
+
 
     async def create_scenario_units(self, agent, data):
         pos: Point2 = data.position.rounded
 
-        print("Creating units...")
+        #print("Creating units...")
+
         x : XMem
         for x in data.units:
             await agent.client.debug_create_unit([[x.type_id, x.amount, pos, agent.player_id]])
@@ -490,7 +539,7 @@ class TrainingMaster:
         assert isinstance(self.players_data[0], TrainingData)
         assert isinstance(self.players_data[1], TrainingData)
         #print(f"Player {agent.player_id} setup stage = {agent.setup_stage}")
-        if not self.got_positions:
+        if not self.scenario_setup_done:
             self.calculation_positions()
             self.setup_scenario_units()
 
@@ -590,6 +639,8 @@ class TrainingMaster:
             #print(f"player {agent.player_id} scenario start wealth = {agent.start_wealth}")
 
             #Maybe give units commands
+            if agent.player_id == 1:
+                print("go!")
             #GO!
             agent.setup_stage = 100
 
@@ -667,6 +718,6 @@ map_name = random.choice(map_names)
 print(f"Loading map = {map_name}")
 
 run_game(maps.get(map_name), [
-    Bot(Race.Random, Protagonist(the_master)),
+    Bot(Race.Zerg, Protagonist(the_master)),
     Bot(Race.Random, Protagonist(the_master)),
 ], realtime=global_debug)

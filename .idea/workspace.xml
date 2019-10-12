@@ -2,11 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="027a5175-9440-4f20-8420-36c7921409aa" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/MapInfo.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/AgentBrain.py" beforeDir="false" afterPath="$PROJECT_DIR$/AgentBrain.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/MicroAgentC2.py" beforeDir="false" afterPath="$PROJECT_DIR$/MicroAgentC2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Protagonist1.py" beforeDir="false" afterPath="$PROJECT_DIR$/Protagonist1.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Training02.py" beforeDir="false" afterPath="$PROJECT_DIR$/Training02.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scenarios.py" beforeDir="false" afterPath="$PROJECT_DIR$/scenarios.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -19,7 +20,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/TrainableAgent.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="119">
+            <state relative-caret-position="153">
               <caret line="9" column="23" selection-start-line="9" selection-start-column="23" selection-end-line="9" selection-end-column="23" />
               <folding>
                 <element signature="e#3#36#0" expanded="true" />
@@ -31,44 +32,29 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Training02.py">
           <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="384">
+              <caret line="467" column="85" lean-forward="true" selection-start-line="467" selection-start-column="85" selection-end-line="467" selection-end-column="85" />
+              <folding>
+                <element signature="e#1#11#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/position.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="198">
+              <caret line="150" column="6" selection-start-line="150" selection-start-column="6" selection-end-line="150" selection-end-column="6" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/MapInfo.py">
+          <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="255">
-              <caret line="59" column="21" lean-forward="true" selection-start-line="59" selection-start-column="21" selection-end-line="59" selection-end-column="21" />
-              <folding>
-                <element signature="e#1#11#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/MicroAgentC2.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="289">
-              <caret line="91" column="49" selection-start-line="91" selection-start-column="49" selection-end-line="91" selection-end-column="49" />
-              <folding>
-                <element signature="e#1#11#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scenarios.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="122">
-              <caret line="119" column="23" lean-forward="true" selection-start-line="119" selection-start-column="23" selection-end-line="119" selection-end-column="23" />
-              <folding>
-                <element signature="e#3#39#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/AgentBrain.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="350">
-              <caret line="130" column="39" lean-forward="true" selection-start-line="130" selection-start-column="39" selection-end-line="130" selection-end-column="39" />
+              <caret line="15" column="48" lean-forward="true" selection-start-line="15" selection-start-column="48" selection-end-line="15" selection-end-column="48" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -77,28 +63,19 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/dicts/unit_tech_alias.py">
+        <entry file="file://$PROJECT_DIR$/Flood.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="187">
-              <caret line="18" column="30" selection-start-line="18" selection-start-column="15" selection-end-line="18" selection-end-column="30" />
+            <state relative-caret-position="340">
+              <caret line="53" column="8" selection-start-line="53" selection-start-column="8" selection-end-line="53" selection-end-column="45" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/units.py">
+        <entry file="file://$PROJECT_DIR$/MicroAgentC2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3400">
-              <caret line="210" selection-start-line="210" selection-end-line="210" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/BaseAgentA1.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2754">
-              <caret line="184" column="53" selection-start-line="184" selection-start-column="53" selection-end-line="184" selection-end-column="53" />
+            <state relative-caret-position="493">
+              <caret line="367" column="13" lean-forward="true" selection-start-line="367" selection-start-column="13" selection-end-line="367" selection-end-column="13" />
               <folding>
                 <element signature="e#1#11#0" expanded="true" />
               </folding>
@@ -107,10 +84,22 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/AgentBrain.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-789">
+              <caret line="76" column="34" selection-start-line="76" selection-start-column="34" selection-end-line="76" selection-end-column="34" />
+              <folding>
+                <element signature="e#0#18#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Protagonist1.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1054">
-              <caret line="73" column="37" selection-start-line="73" selection-start-column="37" selection-end-line="73" selection-end-column="37" />
+            <state relative-caret-position="391">
+              <caret line="75" column="33" lean-forward="true" selection-start-line="75" selection-start-column="33" selection-end-line="75" selection-end-column="33" />
               <folding>
                 <element signature="e#2#12#0" expanded="true" />
               </folding>
@@ -119,10 +108,22 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
+        <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/unit.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="198">
+              <caret line="843" column="8" selection-start-line="843" selection-start-column="8" selection-end-line="843" selection-end-column="8" />
+              <folding>
+                <element signature="e#0#34#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/bot_ai.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="21624">
-              <caret line="1308" column="17" selection-start-line="1308" selection-start-column="12" selection-end-line="1308" selection-end-column="17" />
+            <state relative-caret-position="180">
+              <caret line="91" column="32" selection-start-line="91" selection-start-column="29" selection-end-line="91" selection-end-column="32" />
             </state>
           </provider>
         </entry>
@@ -138,18 +139,12 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>get_brain</find>
-      <find>calculate_wealth</find>
-      <find>previous</find>
-      <find>unit.values</find>
-      <find>cloaked</find>
       <find>last_attack</find>
       <find>value</find>
       <find>attack_count_melee</find>
       <find>attacking_previous_melee</find>
       <find>bonus</find>
       <find>distribute</find>
-      <find>enemy_location_0</find>
       <find>battle_field_position</find>
       <find>time</find>
       <find>ZERGLING</find>
@@ -168,6 +163,12 @@
       <find>CREEP</find>
       <find>creep</find>
       <find>UNIT_TECH_ALIAS</find>
+      <find>map</find>
+      <find>scenario_setup_done</find>
+      <find>dist_from_walls</find>
+      <find>position</find>
+      <find>enemy_location_0</find>
+      <find>setup_stage</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -193,10 +194,11 @@
         <option value="$PROJECT_DIR$/Flood.py" />
         <option value="$PROJECT_DIR$/BaseAgentA1.py" />
         <option value="$PROJECT_DIR$/TrainableAgent.py" />
-        <option value="$PROJECT_DIR$/Protagonist1.py" />
-        <option value="$PROJECT_DIR$/MicroAgentC2.py" />
-        <option value="$PROJECT_DIR$/AgentBrain.py" />
         <option value="$PROJECT_DIR$/scenarios.py" />
+        <option value="$PROJECT_DIR$/AgentBrain.py" />
+        <option value="$PROJECT_DIR$/MicroAgentC2.py" />
+        <option value="$PROJECT_DIR$/MapInfo.py" />
+        <option value="$PROJECT_DIR$/Protagonist1.py" />
         <option value="$PROJECT_DIR$/Training02.py" />
       </list>
     </option>
@@ -372,7 +374,7 @@
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32936078" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.32936078" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.32936078" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.3997833" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -380,7 +382,7 @@
       <window_info anchor="bottom" id="Version Control" order="7" />
       <window_info anchor="bottom" id="Terminal" order="8" weight="0.32936078" />
       <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
-      <window_info active="true" anchor="bottom" id="Python Console" order="10" visible="true" weight="0.32936078" />
+      <window_info anchor="bottom" id="Python Console" order="10" weight="0.32936078" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -397,20 +399,6 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/ids/upgrade_id.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1241">
-          <caret line="73" column="4" selection-start-line="73" selection-start-column="4" selection-end-line="73" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://F:/Anaconda3/envs/sc2/Lib/typing.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="258">
-          <caret line="602" column="8" selection-start-line="602" selection-start-column="8" selection-end-line="602" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/ids/ability_id.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="299">
@@ -567,13 +555,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/position.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2482">
-          <caret line="150" column="6" selection-start-line="150" selection-start-column="6" selection-end-line="150" selection-end-column="6" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/pixel_map.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="198">
@@ -614,16 +595,6 @@
           <caret line="9" column="9" selection-start-line="9" selection-start-column="9" selection-end-line="9" selection-end-column="9" />
           <folding>
             <element signature="e#0#14#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/unit.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="198">
-          <caret line="383" column="8" selection-start-line="383" selection-start-column="8" selection-end-line="383" selection-end-column="8" />
-          <folding>
-            <element signature="e#0#34#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -676,13 +647,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Flood.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="190">
-          <caret line="98" column="86" selection-start-line="98" selection-start-column="78" selection-end-line="98" selection-end-column="86" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://F:/Anaconda3/envs/sc2/Lib/random.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="198">
@@ -694,16 +658,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="198">
           <caret line="512" column="4" selection-start-line="512" selection-start-column="4" selection-end-line="512" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/TrainableAgent.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="119">
-          <caret line="9" column="23" selection-start-line="9" selection-start-column="23" selection-end-line="9" selection-end-column="23" />
-          <folding>
-            <element signature="e#3#36#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -731,57 +685,108 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Protagonist1.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1054">
-          <caret line="73" column="37" selection-start-line="73" selection-start-column="37" selection-end-line="73" selection-end-column="37" />
-          <folding>
-            <element signature="e#2#12#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/bot_ai.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="21624">
-          <caret line="1308" column="17" selection-start-line="1308" selection-start-column="12" selection-end-line="1308" selection-end-column="17" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/MicroAgentC2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="289">
-          <caret line="91" column="49" selection-start-line="91" selection-start-column="49" selection-end-line="91" selection-end-column="49" />
-          <folding>
-            <element signature="e#1#11#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/AgentBrain.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="350">
-          <caret line="130" column="39" lean-forward="true" selection-start-line="130" selection-start-column="39" selection-end-line="130" selection-end-column="39" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/scenarios.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="122">
-          <caret line="119" column="23" lean-forward="true" selection-start-line="119" selection-start-column="23" selection-end-line="119" selection-end-column="23" />
+          <caret line="119" column="23" selection-start-line="119" selection-start-column="23" selection-end-line="119" selection-end-column="23" />
           <folding>
             <element signature="e#3#39#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Training02.py">
+    <entry file="file://F:/Anaconda3/envs/sc2/Lib/enum.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="402">
+          <caret line="348" selection-start-line="348" selection-end-line="348" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/AgentBrain.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-789">
+          <caret line="76" column="34" selection-start-line="76" selection-start-column="34" selection-end-line="76" selection-end-column="34" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/bot_ai.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="91" column="32" selection-start-line="91" selection-start-column="29" selection-end-line="91" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Flood.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="340">
+          <caret line="53" column="8" selection-start-line="53" selection-start-column="8" selection-end-line="53" selection-end-column="45" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/TrainableAgent.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="153">
+          <caret line="9" column="23" selection-start-line="9" selection-start-column="23" selection-end-line="9" selection-end-column="23" />
+          <folding>
+            <element signature="e#3#36#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/MicroAgentC2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="493">
+          <caret line="367" column="13" lean-forward="true" selection-start-line="367" selection-start-column="13" selection-end-line="367" selection-end-column="13" />
+          <folding>
+            <element signature="e#1#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/position.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="198">
+          <caret line="150" column="6" selection-start-line="150" selection-start-column="6" selection-end-line="150" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/MapInfo.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="255">
-          <caret line="59" column="21" lean-forward="true" selection-start-line="59" selection-start-column="21" selection-end-line="59" selection-end-column="21" />
+          <caret line="15" column="48" lean-forward="true" selection-start-line="15" selection-start-column="48" selection-end-line="15" selection-end-column="48" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Protagonist1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="391">
+          <caret line="75" column="33" lean-forward="true" selection-start-line="75" selection-start-column="33" selection-end-line="75" selection-end-column="33" />
+          <folding>
+            <element signature="e#2#12#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/unit.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="198">
+          <caret line="843" column="8" selection-start-line="843" selection-start-column="8" selection-end-line="843" selection-end-column="8" />
+          <folding>
+            <element signature="e#0#34#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Training02.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="384">
+          <caret line="467" column="85" lean-forward="true" selection-start-line="467" selection-start-column="85" selection-end-line="467" selection-end-column="85" />
           <folding>
             <element signature="e#1#11#0" expanded="true" />
           </folding>

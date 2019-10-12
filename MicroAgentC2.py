@@ -77,8 +77,12 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         self.iteration = -1
         self.delta_step_time = 1.0
         self.brain : AgentBrain.AgentBrain = None
-        self.attack_network : AgentBrain.Network = None
-        self.move_network : AgentBrain.Network = None
+        self.range_attack_network : AgentBrain.Network = None
+        self.range_move_network : AgentBrain.Network = None
+        self.melee_attack_network : AgentBrain.Network = None
+        self.melee_move_network : AgentBrain.Network = None
+        self.flying_attack_network : AgentBrain.Network = None
+        self.flying_move_network : AgentBrain.Network = None
 
         self.enemy_memory : Memory = Memory()
         self.friendly_memory : Memory = Memory()
@@ -91,8 +95,12 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         assert isinstance(self.brain, AgentBrain.AgentBrain)
         #TODO Rather combine this into 1 network!
         #print(f"Agent got a new brain! {self.player_id}")
-        self.attack_network = brain.get_network(self.race, "attack", 42, 2)
-        self.move_network = brain.get_network(self.race, "move", 32, 2, hidden_count=16)
+        self.range_attack_network = brain.get_network(self.race, "range_attack", 42, 2)
+        self.range_move_network = brain.get_network(self.race, "range_move", 32, 2, hidden_count=16)
+        self.melee_attack_network = brain.get_network(self.race, "range_attack", 42, 2)
+        self.melee_move_network = brain.get_network(self.race, "range_move", 32, 2, hidden_count=16)
+        self.flying_attack_network = brain.get_network(self.race, "flying_attack", 42, 2)
+        self.flying_move_network = brain.get_network(self.race, "flying_move", 32, 2, hidden_count=16)
         assert isinstance(self.attack_network, AgentBrain.Network)
 
 

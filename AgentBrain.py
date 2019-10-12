@@ -66,7 +66,7 @@ class AgentBrain:
 
     def __init__(self, filename = "brain.p"):
         self.default_filename = filename
-        self.networks = {Race.Zerg : dict(), Race.Terran : dict(), Race.Protss : dict()}
+        self.networks = {Race.Zerg : dict(), Race.Terran : dict(), Race.Protoss : dict()}
         self.used = False # Used to track if all brains have been used on a scenario
 
     def get_existing_network(self, race, name):

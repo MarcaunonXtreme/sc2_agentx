@@ -68,7 +68,13 @@ class Protagonist(BaseAgentA1, TrainableAgent):
             self.do_it = True
         else:
             #TODO: implement this Protagonist's code
-            pass
+            if self.do_it:
+                self.do_it = False
+                print(f"{self.player_id} Attacking now!")
+                u: Unit
+                for u in self.units:
+                    self.do(u.attack(self.enemy_location_0))
+
 
             # Check if scenario ended?
             self.master.check_scenario_end(self)
