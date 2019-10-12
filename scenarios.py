@@ -113,7 +113,6 @@ def get_race_scunits(sc :Scenario, player_id, race):
         u = rt.terran
     elif race == Race.Protoss:
         u = rt.protoss
-    assert isinstance(u, list)
     return u
 
 def get_network_names(sc: Scenario, race):
@@ -146,6 +145,36 @@ SCENARIOS2 =[
             protoss=["melee_move", "melee_attack"]),
         level = 1
     ),
+    Scenario(SCENARIO_TYPE_ANY,
+         p1=RaceTuple(
+             zerg=[ScUnits(UnitTypeId.ZERGLING, 8, 16)],  # Zerg
+             terran=[ScUnits(UnitTypeId.MARINE, 4, 8)],  # Terran
+             protoss=[ScUnits(UnitTypeId.ZEALOT, 2, 4)]),
+         p2=RaceTuple(
+             zerg=[ScUnits(UnitTypeId.BANELING, 2, 8)],  # Zerg
+             terran=None,
+             protoss=None),
+         networks=RaceTuple(
+             zerg=["melee_move", "melee_attack"],
+             terran=["range_move", "range_attack"],
+             protoss=["melee_move", "melee_attack"]),
+         level=1
+         ),
+    Scenario(SCENARIO_TYPE_ANY,
+         p1=RaceTuple(
+             zerg=[ScUnits(UnitTypeId.ROACH, 2, 6)],  # Zerg
+             terran=[ScUnits(UnitTypeId.MARAUDER, 2, 6)],  # Terran
+             protoss=[ScUnits(UnitTypeId.STALKER, 2, 6)]),
+         p2=RaceTuple(
+             zerg=[ScUnits(UnitTypeId.BANELING, 2, 8)],  # Zerg
+             terran=None,
+             protoss=None),
+         networks=RaceTuple(
+             zerg=["range_move", "range_attack"],
+             terran=["range_move", "range_attack"],
+             protoss=["range_move", "range_attack"]),
+         level=1
+         ),
     Scenario(SCENARIO_TYPE_ANY,
         p1 = RaceTuple(
             zerg=[ScUnits(UnitTypeId.ROACH, 4, 12)],

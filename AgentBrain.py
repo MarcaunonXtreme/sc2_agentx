@@ -118,6 +118,10 @@ class AgentBrain:
         else:
             return -2
 
+    def get_average_stars(self, race):
+        nets = self.networks[race]
+        s = [n.stars for n in nets]
+        return np.average(s)
 
     def delete_network(self, race, name):
         print(f"Deleting network {race}:{name} from brain")

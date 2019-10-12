@@ -58,6 +58,7 @@ class TrainingData:
         self.units = [] # also xmem but for scenario units
         self.position : Point2 = Point2()
         self.natural_expansion = random.random() > 0.5
+        self.natural_def_location : Point2 = Point2()
 
 
 class TrainingMaster:
@@ -112,7 +113,6 @@ class TrainingMaster:
         # firstly remove all existing units :)
         await agent.client.debug_kill_unit(agent.units)
         #TODO: fix up starting positions so scouting isn't necessary
-        #TODO: on 4-player maps fix this so that the bases gets moved to the corner locations
 
 
         data : TrainingData = agent.training_data
@@ -155,6 +155,8 @@ class TrainingMaster:
                 assert loc
                 data.xmem.append(XMem(UnitTypeId.HATCHERY, loc))
 
+                data.natural_def_location = loc.towards(agent.game_info.map_center, 5)
+
                 #TODO: wall?
                 #TODO: defense spines?
 
@@ -174,7 +176,10 @@ class TrainingMaster:
                 assert loc
                 data.xmem.append(XMem(UnitTypeId.ORBITALCOMMAND, loc))
 
+                data.natural_def_location = loc.towards(agent.game_info.map_center, 5)
+
                 #TODO: Natural wall?
+
 
                 #Add a defense bunker in front of natural 50% chance
                 if random.random() > 0.5:
@@ -195,6 +200,7 @@ class TrainingMaster:
             gas = XMem(UnitTypeId.ASSIMILATOR, main_base.vespene_geyser[0].position)
             data.xmem.append(gas)
 
+
             #TODO: more pylons
             #TODO: cannon in mineral line(s)
 
@@ -203,6 +209,8 @@ class TrainingMaster:
                 exp_loc = await agent.get_next_expansion()
                 assert exp_loc
                 data.xmem.append(XMem(UnitTypeId.NEXUS, exp_loc))
+
+                data.natural_def_location = exp_loc.towards(agent.game_info.map_center, 5)
 
                 loc2 = exp_loc.towards(agent.game_info.map_center, 3)
                 loc = await agent.find_placement(UnitTypeId.PYLON, loc2)
@@ -352,14 +360,14 @@ class TrainingMaster:
             b.reset_scores()
 
 
+        #TODO: save the best brain somewhere else for safe keeping
         print("Saving brains...")
         for nr, b in enumerate(self.brains):
             b.save(f"agents/agent_{nr}.p")
 
-        # TODO: end map or end scenario! (stars new scenario at new location etc...)
-        # TODO: shutdown everything now, mutate and save
+        #next scenario/map?
         self.round = 0
-
+        self.scenario_setup_done = False  # trigger new scenario setup
         self.scenario_count += 1
         if self.scenario_count >= 5:
             print("=== DONE WITH THIS MAP ===")
@@ -447,20 +455,47 @@ class TrainingMaster:
 
     def calculation_positions(self):
 
-        print("Calculating new scenario position...")
+
         agent: sc2.BotAI = self.players[0]
         assert isinstance(agent, sc2.BotAI)
 
-        # Find a position in an open space:
-        pos_good = False
-        while not pos_good:
-            y = random.randint(4, self.dist_from_walls.shape[0]-5)
-            x = random.randint(4, self.dist_from_walls.shape[1]-5)
-            pos = Point2((x,y))
+        sc_type = self.scenario.scenario_type
+        if sc_type == SCENARIO_TYPE_ANY:
+            sc_type = random.choice([SCENARIO_TYPE_ATTACK,SCENARIO_TYPE_DEFENSE, SCENARIO_TYPE_OPEN])
 
-            if self.dist_from_walls[y,x] >= 4 and agent.in_pathing_grid(pos):
-                #TODO: must check to be far enough from walls?
-                pos_good = True
+        # Find a position in an open space:
+        if sc_type == SCENARIO_TYPE_OPEN:
+            print("Calculating new scenario position...[OPEN]")
+            pos_good = False
+            while not pos_good:
+                y = random.randint(4, self.dist_from_walls.shape[0]-5)
+                x = random.randint(4, self.dist_from_walls.shape[1]-5)
+                pos = Point2((x,y))
+
+                if self.dist_from_walls[y,x] >= 4 and agent.in_pathing_grid(pos):
+                    #TODO: must check to be far enough from walls?
+                    pos_good = True
+
+        elif sc_type ==SCENARIO_TYPE_ATTACK:
+            print("Calculating new scenario position...[ATTACK]")
+            tdata : TrainingData = self.players_data[1]
+            if tdata.natural_expansion:
+                pos = tdata.natural_def_location.rounded
+            else:
+                agent : sc2.BotAI = self.players[1]
+                pos = agent.main_base_ramp.top_center.rounded
+
+        elif sc_type == SCENARIO_TYPE_DEFENSE:
+            print("Calculating new scenario position...[DEFENSE]")
+            tdata : TrainingData = self.players_data[0]
+            if tdata.natural_expansion:
+                pos = tdata.natural_def_location.rounded
+            else:
+                agent : sc2.BotAI = self.players[0]
+                pos = agent.main_base_ramp.top_center.rounded
+
+        else:
+            raise NotImplementedError
 
         self.battle_field_position = pos
 
@@ -469,6 +504,7 @@ class TrainingMaster:
 
         best1 = 1000
         best2 = 1000
+
 
         # find coordinates 15 away from battle location closest to player start zones
         coords = np.where(tmpx >= 15)
@@ -545,8 +581,9 @@ class TrainingMaster:
         assert isinstance(self.players_data[1], TrainingData)
         #print(f"Player {agent.player_id} setup stage = {agent.setup_stage}")
         if not self.scenario_setup_done:
-            self.calculation_positions()
             self.setup_scenario_units()
+            self.calculation_positions()
+
 
         data : TrainingData = agent.training_data
 
