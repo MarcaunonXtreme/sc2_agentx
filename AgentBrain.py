@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 
 from sc2 import Race
+from copy import deepcopy
 
 # An agent brain is a collection of networks that can be used to make decisions with
 
@@ -22,7 +23,7 @@ class Network:
         self.b1 = np.random.randn(max_outputs)
         self.b1 /= 16.0
         self.generation = 0
-        self.scenario_count = 0
+        #self.scenario_count = 0
         self.score = 0
         self.stars = 0
 
@@ -66,7 +67,11 @@ class AgentBrain:
     def __init__(self, filename = "brain.p"):
         self.default_filename = filename
         self.networks = {Race.Zerg : dict(), Race.Terran : dict(), Race.Protss : dict()}
+        self.used = False # Used to track if all brains have been used on a scenario
 
+    def get_existing_network(self, race, name):
+        nets = self.networks[race]
+        return nets.get(name, None)
 
     def get_network(self, race, name, max_inputs, max_outputs, hidden_count=24) -> Network:
         nets = self.networks[race]
@@ -93,11 +98,42 @@ class AgentBrain:
             if n in nets:
                 nets[n].score = score
 
+    def get_score(self, race, network_name):
+        nets = self.networks[race]
+        if network_name in nets:
+            return nets[network_name].score
+        else:
+            return 0
+
+    def give_stars(self, race, network_name, stars):
+        nets = self.networks[race]
+        if network_name in nets:
+            nets[network_name].stars = min(nets[network_name].stars + stars, 4)
+            return nets[network_name].stars
+
+    def get_stars(self, race, network_name):
+        nets = self.networks[race]
+        if network_name in nets:
+            return nets[network_name].stars
+        else:
+            return -2
+
+
     def delete_network(self, race, name):
         print(f"Deleting network {race}:{name} from brain")
         nets = self.networks[race]
         if name in nets:
             del name[nets]
+
+    def copy_and_mutate_from(self, race, name, source_brain, factor1=0.1,factor2=0.2):
+        assert isinstance(source_brain, AgentBrain)
+        net = deepcopy(source_brain.networks[race][name])
+        assert isinstance(net, Network)
+        net.mutate(factor1,factor2)
+        net.generation += 1
+        if name in self.networks[race]:
+            del self.networks[race][name]
+        self.networks[race][name] = net
 
     def save(self, filename):
         if not filename:
@@ -121,19 +157,10 @@ class AgentBrain:
             print("Failed to load, creating new Brain")
             return AgentBrain(filename)
 
-    def mutate(self, factor1 = 0.05, factor2 = 0.20 ):
-        print("Mutating Brain")
-        for network in self.networks.values():
-            if network.count > 256 :
-                network.mutate(factor1,factor2)
+    def reset_scores(self):
+        self.used = False
+        for nets in self.networks.values():
+            for n in nets.values():
+                n.score = 0
 
-    def reset_counts(self):
-        self.score = 0
-        self.used = 0
-        for network in self.networks.values():
-            network.count = 0
 
-    #Create a new brain from a combination of 2 "parents"
-    @staticmethod
-    def breed_new_brain(b1,b2):
-        raise NotImplementedError

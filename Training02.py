@@ -58,7 +58,7 @@ class TrainingData:
 
 
 class TrainingMaster:
-    def __init__(self, nr_brains = 30):
+    def __init__(self, nr_brains = 4):
         self.players = [None, None]
         self.players_data = [None, None]
 
@@ -74,6 +74,7 @@ class TrainingMaster:
         for nr in range(nr_brains):
             self.brains.append(AgentBrain.load(f"agents/agent_{nr}.p"))
 
+        self.scenario : Scenario = None
 
     def register_player(self, bot : (TrainableAgent, sc2.BotAI)):
         bot.training_data = TrainingData(bot)
@@ -94,25 +95,35 @@ class TrainingMaster:
         return self.players[0].setup_stage < 10 or self.players[1].setup_stage < 10
 
 
+
+
     def setup_scenario_units(self):
 
-        keys = list(SCENARIOS1.keys())
-        amount = len(keys)
-        key = keys[random.randint(0,amount-1)]
-        scenario = SCENARIOS1[key]
+        good_sc = False
+        while not good_sc:
+            self.scenario : Scenario = random.choice(SCENARIOS2)
+
+            pp = list()
+            pp.append(get_race_scunits(self.scenario, 1, self.players[0].race))
+            pp.append(get_race_scunits(self.scenario, 2, self.players[1].race))
+
+            if pp[0] is not None and pp[1] is not None:
+                if len(pp[0]) > 0 and len(pp[1]) > 0:
+                    good_sc = True
+
 
         for p in range(2):
+            unit_list : list = pp[p]
+            assert isinstance(unit_list, list) and len(unit_list) > 0
+
             data :TrainingData = self.players_data[p]
 
-            index = RACE_INDEX[self.players[p].race]
-
-            unit_list : list = scenario[index]
-
+            units : ScUnits
             for units in unit_list:
-                tmp = XMem(units[0])
-                tmp.amount = random.randint(units[1],units[2])
+                assert isinstance(units, ScUnits)
+                tmp = XMem(units.type_id)
+                tmp.amount = random.randint(units.min,units.max)
                 data.units.append(tmp)
-
 
 
     async def step0_setup(self, agent : (TrainableAgent, sc2.BotAI)):
@@ -288,57 +299,80 @@ class TrainingMaster:
         #TODO: update this to actually work on networks and note brains!
 
         for b in self.brains:
-            assert b.used == 1 #all brains used once now!
+            assert b.used #all brains used once now!
 
-        scores = [b.score for b in self.brains]  #actually the average score to make it fair.
 
-        f = open("train_report.txt","a+")
-        f.write("== End of Map ==\r\n")
-        f.write(f"SCORES: {scores}\r\n")
 
-        scores.sort(reverse=True)
-        cutoff1 = scores[round(len(scores)*0.1)]
-        cutoff2 = scores[round(len(scores)*0.3)]
-        f.write(f"top 10% score = {cutoff1}\r\n")
-        f.write(f"top 30% score = {cutoff2}\r\n")
+        kill_count = 0
 
-        top_score = max(scores)
-        bot_score = min(scores)
+        race = self.players[0].race
 
-        b : AgentBrain
-        for i,b in enumerate(self.brains):
-            if b.score == top_score:
-                continue #don't remove top scorer ever!
-            if b.used <= 0:
-                continue #don't delete brains if they never had a chance!
+        first = True
+        #Process all networks that was trained:
+        for network_name in self.scenario.networks:
 
-            #TODO: upgrade this to the star system!
-            if b.score < cutoff2:
-                #Not in top 30%
-                self.brains[i] = None
-            elif b.score < cutoff1:
-                #Not in top 10% = 50% elimination chance
-                if np.random.random() < 0.5:
-                    self.brains[i] = None
+            scores = [b.get_score(race, network_name) for b in self.brains]
 
-        survived = [b for b in self.brains if b is not None]
-        f.write(f"{len(survived)} brains survived\r\n")
+
+            if first:
+                first = False
+                f = open("train_report.txt", "a+")
+                f.write("== End of Map ==\r\n")
+                f.write(f"SCORES: {scores}\r\n")
+
+            scores.sort(reverse=True)
+            top10 = scores[round(len(scores) * 0.11)]
+            top20 = scores[round(len(scores) * 0.22)]
+            bottom60 = scores[round(len(scores) * 0.39)]
+            bottom30 = scores[round(len(scores) * 0.69)]
+
+            if first:
+                f.write(f"top 10% score = {top10}\r\n")
+                f.write(f"top 20% score = {top20}\r\n")
+
+            kill = []
+
+            b : AgentBrain
+            for i,b in enumerate(self.brains):
+                score = b.get_score(race, network_name)
+                stars = 0
+                if score >= top10:
+                    stars = 2
+                elif score >= top20:
+                    stars = 1
+                elif score <= bottom30:
+                    stars = -2
+                elif score <= bottom60:
+                    stars = -1
+
+                s = b.give_stars(race, network_name, stars)
+                if s <= -6:
+                    kill.append(b)
+
+            best_networks = [b for b in self.brains if b.get_score(race, network_name) >= 2]
+            if len(best_networks) == 0:
+                best_networks = [b for b in self.brains if b.get_score(race, network_name) >= 0]
+            assert len(best_networks) > 0
+            for b in kill:
+                kill_count += 1
+
+                b.copy_and_mutate_from(race, network_name, random.choice(best_networks) )
+
+
+
+        f.write(f"Killed {kill_count} networks\r\n")
         f.close()
 
-        #create new brains by mutating the survivors randomly:
-        for i, b in enumerate(self.brains):
-            if b is None:
-                newb :AgentBrain = deepcopy(random.choice(survived))
-                newb.mutate()
-                self.brains[i] = newb
-
+        #reset when done
         for b in self.brains:
-            b.reset_counts()
+            b.reset_scores()
+
 
         print("Saving brains...")
         for nr, b in enumerate(self.brains):
             b.save(f"agents/agent_{nr}.p")
 
+        # TODO: end map or end scenario! (stars new scenario at new location etc...)
         # TODO: shutdown everything now, mutate and save
         self.round = 0
 
@@ -377,6 +411,13 @@ class TrainingMaster:
         print(f"Player 1 score = {p1_score}")
         #print(f"Player 2 score = {p2_score}")
 
+        # Start new scenario:
+        self.round += 1
+        # Score the brain used by player 1 only:
+        b1: AgentBrain = self.players[0].get_brain()
+        b1.score_networks(self.players[0].race,self.scenario.networks, p1_score)
+
+
         done = True
         for b in self.brains:
             if not b.used:
@@ -394,16 +435,9 @@ class TrainingMaster:
         # But what if agents are race specific or other things.
         # Better is to play multiple different agents on the same scenario and then compare to average score.
 
-        #Start new scenario:
-        self.round += 1
 
-        #Score the brain used by player 1 only
-        b1 : AgentBrain = self.players[0].get_brain()
-        #b2 : AgentBrain = self.players[1].get_brain()
-        b1.score += p1_score
-        #b2.score += p2_score
-        #self.players[0].use_brain(b2)
-        #self.players[1].use_brain(b1)
+
+
 
 
     def check_scenario_end(self,agent :sc2.BotAI):
@@ -472,7 +506,7 @@ class TrainingMaster:
                 # Non Protagonist gets brain :)
                 chosen = None
                 for b in self.brains:
-                    if b.used == 0:
+                    if not b.used:
                         chosen = b
                         break
                 assert chosen
@@ -544,7 +578,7 @@ class TrainingMaster:
             #activate brain:
             b = agent.get_brain()
             if b:
-                b.used += 1 # brain is being used now!
+                b.used = True # brain is being used now!
 
             #Disable fast build:
             await agent.client.debug_fast_build()

@@ -91,8 +91,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         assert isinstance(self.brain, AgentBrain.AgentBrain)
         #TODO Rather combine this into 1 network!
         #print(f"Agent got a new brain! {self.player_id}")
-        self.attack_network = brain.get_network("attack", 42, 2)
-        self.move_network = brain.get_network("move", 32, 2, hidden_count=16)
+        self.attack_network = brain.get_network(self.race, "attack", 42, 2)
+        self.move_network = brain.get_network(self.race, "move", 32, 2, hidden_count=16)
         assert isinstance(self.attack_network, AgentBrain.Network)
 
 
