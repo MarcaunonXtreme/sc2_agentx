@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="027a5175-9440-4f20-8420-36c7921409aa" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/Training02.py" beforeDir="false" afterPath="$PROJECT_DIR$/Training02.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scenarios.py" beforeDir="false" afterPath="$PROJECT_DIR$/scenarios.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -28,8 +27,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Training02.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="146">
-              <caret line="337" column="39" lean-forward="true" selection-start-line="337" selection-start-column="39" selection-end-line="337" selection-end-column="39" />
+            <state relative-caret-position="323">
+              <caret line="428" lean-forward="true" selection-start-line="428" selection-end-line="428" />
               <folding>
                 <element signature="e#1#11#0" expanded="true" />
               </folding>
@@ -49,7 +48,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/scenarios.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="316">
+            <state relative-caret-position="180">
               <caret line="174" column="31" lean-forward="true" selection-start-line="174" selection-start-column="31" selection-end-line="174" selection-end-column="31" />
               <folding>
                 <element signature="e#3#39#0" expanded="true" />
@@ -725,13 +724,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/position.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="198">
-          <caret line="150" column="6" selection-start-line="150" selection-start-column="6" selection-end-line="150" selection-end-column="6" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/MapInfo.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="255">
@@ -762,16 +754,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/scenarios.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="316">
-          <caret line="174" column="31" lean-forward="true" selection-start-line="174" selection-start-column="31" selection-end-line="174" selection-end-column="31" />
-          <folding>
-            <element signature="e#3#39#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/AgentBrain.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="402">
@@ -782,10 +764,27 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://F:/Anaconda3/envs/sc2/Lib/site-packages/sc2/position.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="198">
+          <caret line="150" column="6" selection-start-line="150" selection-start-column="6" selection-end-line="150" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scenarios.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="174" column="31" lean-forward="true" selection-start-line="174" selection-start-column="31" selection-end-line="174" selection-end-column="31" />
+          <folding>
+            <element signature="e#3#39#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/Training02.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="146">
-          <caret line="337" column="39" lean-forward="true" selection-start-line="337" selection-start-column="39" selection-end-line="337" selection-end-column="39" />
+        <state relative-caret-position="323">
+          <caret line="428" lean-forward="true" selection-start-line="428" selection-end-line="428" />
           <folding>
             <element signature="e#1#11#0" expanded="true" />
           </folding>

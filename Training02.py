@@ -67,6 +67,7 @@ class TrainingMaster:
 
 
         self.round = 0
+        self.scenario_count = 0
         self.end_time = 90.0
 
         self.scenario_setup_done = False
@@ -276,8 +277,6 @@ class TrainingMaster:
     def end_map_now(self):
         print("==== ENDING THIS MAP ====")
 
-        #TODO: update this to actually work on networks and note brains!
-
         for b in self.brains:
             assert b.used #all brains used once now!
 
@@ -361,8 +360,12 @@ class TrainingMaster:
         # TODO: shutdown everything now, mutate and save
         self.round = 0
 
-        #p: sc2.BotAI = self.players[0]
-        #p.client.debug_leave()
+        self.scenario_count += 1
+        if self.scenario_count >= 5:
+            print("=== DONE WITH THIS MAP ===")
+            p: sc2.BotAI = self.players[0]
+            p.client.debug_leave()
+
 
 
     def end_scenario_now(self, bonus_time):
@@ -433,9 +436,9 @@ class TrainingMaster:
         if len(agent.structures) <= 2:
             print("Agent lost too many buildings!")
             self.end_scenario_now(self.end_time - agent.time)
-        elif len(agent.units) < 16:
+        elif len(agent.units) < 12:
             #See if combat units are all gone?
-            cnt = agent.units.filter(lambda u: u.type_id not in [UnitTypeId.EGG, UnitTypeId.LARVA, UnitTypeId.MULE, UnitTypeId.BROODLING, UnitTypeId.CREEPTUMOR, UnitTypeId.CREEPTUMORBURROWED])
+            cnt = agent.units.filter(lambda u: u.type_id not in [UnitTypeId.EGG, UnitTypeId.LARVA, UnitTypeId.MULE, UnitTypeId.BROODLING, UnitTypeId.CREEPTUMOR, UnitTypeId.CREEPTUMORBURROWED, UnitTypeId.CREEPTUMOR, UnitTypeId.CREEPTUMORQUEEN])
             if len(cnt) <= 0:
                 print("Units lost, ending scenario")
                 self.end_scenario_now( self.end_time - agent.time )
