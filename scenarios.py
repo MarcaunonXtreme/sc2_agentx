@@ -100,6 +100,7 @@ Scenario = namedtuple('Scenario',['scenario_type','p1','p2','networks', 'level']
 RaceTuple = namedtuple('RaceTuple',['zerg','terran','protoss'])
 ScUnits = namedtuple('ScUnits',['type_id','min','max'])
 
+
 def get_race_scunits(sc :Scenario, player_id, race):
     assert isinstance(sc, Scenario)
     rt : RaceTuple = sc.p1 if player_id == 1 else sc.p2
@@ -112,42 +113,79 @@ def get_race_scunits(sc :Scenario, player_id, race):
         u = rt.terran
     elif race == Race.Protoss:
         u = rt.protoss
+    assert isinstance(u, list)
     return u
 
+def get_network_names(sc: Scenario, race):
+    assert isinstance(sc, Scenario)
+    n : RaceTuple = sc.networks
+    assert isinstance(n, RaceTuple)
+    if race == Race.Zerg:
+        u = n.zerg
+    elif race == Race.Terran:
+        u = n.terran
+    elif race == Race.Protoss:
+        u = n.protoss
+    assert isinstance(u,list)
+    return u
+
+
+#TODO: banelings!
+#TODO: early queen defense!
 
 SCENARIOS2 =[
     Scenario(SCENARIO_TYPE_ANY,
         p1 = RaceTuple(
             zerg = [ScUnits(UnitTypeId.ZERGLING, 8,16)], #Zerg
-            terran = None,
-            protoss = None),
-        p2 = RaceTuple(
-            zerg = [ScUnits(UnitTypeId.ZERGLING, 8,18)], #Zerg
-            terran = [ScUnits(UnitTypeId.MARINE, 4,9)], #Terran
-            protoss = [ScUnits(UnitTypeId.ZEALOT, 2,5)] ), #Protoss,
-        networks = ["melee_move", "melee_attack"],
+            terran = [ScUnits(UnitTypeId.MARINE, 4,8)], #Terran
+            protoss = [ScUnits(UnitTypeId.ZEALOT, 2,4)]),
+        p2 = None,
+        networks = RaceTuple(
+            zerg= ["melee_move", "melee_attack"],
+            terran=["range_move" , "range_attack"],
+            protoss=["melee_move", "melee_attack"]),
         level = 1
     ),
     Scenario(SCENARIO_TYPE_ANY,
         p1 = RaceTuple(
-            zerg = None,
-            terran = [ScUnits(UnitTypeId.MARINE, 4,8)], #Terran
-            protoss = [ScUnits(UnitTypeId.ZEALOT, 2,4)] ), #Protoss,
-        p2=RaceTuple(
-             zerg=[ScUnits(UnitTypeId.ZERGLING, 8, 18)],  # Zerg
-             terran=[ScUnits(UnitTypeId.MARINE, 4, 9)],  # Terran
-             protoss=[ScUnits(UnitTypeId.ZEALOT, 2, 5)]),  # Protoss,
-        networks= ["range_move" , "range_attack"],
+            zerg=[ScUnits(UnitTypeId.ROACH, 4, 12)],
+            terran=[ScUnits(UnitTypeId.MARINE, 2, 8), ScUnits(UnitTypeId.MARAUDER, 2,6)],
+            protoss=[ScUnits(UnitTypeId.STALKER, 4, 10)]
+        ),
+        p2 = None,
+        networks = RaceTuple(
+            zerg=["range_move" , "range_attack"],
+            terran=["range_move" , "range_attack"],
+            protoss=["range_move" , "range_attack"]),
         level = 1
+    ),
+    Scenario(SCENARIO_TYPE_ANY,
+        p1 = RaceTuple(
+            zerg=[ScUnits(UnitTypeId.ZERGLING, 6,12), ScUnits(UnitTypeId.ROACH, 4, 8)],
+            terran=[ScUnits(UnitTypeId.MARINE, 4,8), ScUnits(UnitTypeId.MARAUDER, 4,9)],
+            protoss=[ScUnits(UnitTypeId.ZEALOT, 2,4), ScUnits(UnitTypeId.STALKER, 4,8)]
+        ),
+        p2 = None,
+        networks = RaceTuple(
+            zerg=["range_move", "range_attack", "melee_move", "melee_range"],
+            terran=["range_move" , "range_attack"],
+            protoss=["range_move", "range_attack", "melee_move", "melee_range"]),
+        level = 1
+    ),
+    Scenario(SCENARIO_TYPE_ANY,
+        p1 = RaceTuple(
+            zerg=[ScUnits(UnitTypeId.ROACH, 6,12), ScUnits(UnitTypeId.HYDRALISK, 4, 8)],
+            terran=[ScUnits(UnitTypeId.MARINE, 6,12), ScUnits(UnitTypeId.MARAUDER, 5,10)],
+            protoss=[ScUnits(UnitTypeId.STALKER, 6,12), ScUnits(UnitTypeId.IMMORTAL, 2,4)],
+        ),
+        p2 = None,
+        networks=RaceTuple(
+            zerg=["range_move", "range_attack"],
+            terran=["range_move", "range_attack"],
+            protoss=["range_move", "range_attack"]),
+        level = 2
     )
 
 ]
-
-
-
-
-
-
-
 
 

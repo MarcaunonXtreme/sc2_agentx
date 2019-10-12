@@ -287,9 +287,11 @@ class TrainingMaster:
 
         race = self.players[0].race
 
+
         first = True
+
         #Process all networks that was trained:
-        for network_name in self.scenario.networks:
+        for network_name in get_network_names(self.scenario, race):
 
             scores = [b.get_score(race, network_name) for b in self.brains]
 
@@ -398,7 +400,7 @@ class TrainingMaster:
         self.round += 1
         # Score the brain used by player 1 only:
         b1: AgentBrain = self.players[0].get_brain()
-        b1.score_networks(self.players[0].race,self.scenario.networks, p1_score)
+        b1.score_networks(self.players[0].race,get_network_names(self.scenario, self.players[0].race), p1_score)
 
 
         done = True
