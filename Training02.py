@@ -67,7 +67,7 @@ class TrainingData:
 
 
 class TrainingMaster:
-    def __init__(self, nr_brains = 10):
+    def __init__(self, nr_brains = 24):
         self.players = [None, None]
         self.players_data = [None, None]
 

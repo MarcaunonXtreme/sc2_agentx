@@ -325,7 +325,21 @@ SCENARIOS2 =[
              protoss=["melee_move", "melee_attack"]),
          level=1
          ),
-
+    Scenario(SCENARIO_TYPE_OPEN,
+         p1=RaceTuple(
+             zerg=[ScUnits(UnitTypeId.ZERGLING, 8, 24)],  # Zerg
+             terran=None,
+             protoss=[ScUnits(UnitTypeId.ZEALOT, 4, 12)]),
+         p2=RaceTuple(
+             zerg=[ScUnits(UnitTypeId.ROACH, 4, 8)],  # Zerg
+             terran=[ScUnits(UnitTypeId.REAPER, 4, 12)],
+             protoss=[ScUnits(UnitTypeId.ADEPT, 4, 12)]),
+         networks=RaceTuple(
+             zerg=["melee_move", "melee_attack"],
+             terran=["range_move", "range_attack"],
+             protoss=["melee_move", "melee_attack"]),
+         level=1
+         ),
 ]
 
 
