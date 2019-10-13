@@ -24,8 +24,10 @@ class Protagonist(BaseAgentA1, TrainableAgent):
         # disable macro and set training mode tactics for now
         self.disable_macro = True
         self.enemy_location_0 : Point2 = None
+        self.enemy_location_1: Point2 = None
 
         self.do_it = False
+        self.do_it2 = False
 
     async def on_start(self):
         self.master.register_player(self)
@@ -68,12 +70,27 @@ class Protagonist(BaseAgentA1, TrainableAgent):
             self.do_it = True
         else:
             #TODO: implement this Protagonist's code
+
             if self.do_it:
+                #First attack towards centre
                 self.do_it = False
+                self.do_it2 = True
                 print(f"{self.player_id} Attacking now!")
                 u: Unit
                 for u in self.units:
                     self.do(u.attack(self.enemy_location_0))
+
+            elif self.do_it2:
+                #Queue attack to enemy position (in-case enemy is slower)
+                self.do_it2 = False
+                u: Unit
+                for u in self.units:
+                    self.do(u.attack(self.enemy_location_1, queue=True))
+
+            else:
+                #Process units
+                pass
+
 
 
             # Check if scenario ended?

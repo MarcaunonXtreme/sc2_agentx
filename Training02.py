@@ -629,6 +629,7 @@ class TrainingMaster:
 
             #set target location
             agent.enemy_location_0 = self.battle_field_position
+            agent.enemy_location_1 = self.position[0] if agent.player_id == 2 else self.position[1]
             agent.setup_stage = 4
 
         if agent.setup_stage == 4:
@@ -665,6 +666,10 @@ class TrainingMaster:
             # Final stage
 
             # Set unit energy levels
+            u : Unit
+            for u in agent.units:
+                if u.energy_max > 0:
+                    await agent.client.debug_set_unit_value(u, 1, value=u.energy_max)
 
             #activate brain:
             b = agent.get_brain()
