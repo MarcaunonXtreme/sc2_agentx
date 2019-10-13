@@ -55,8 +55,15 @@ class UnitMemory:
         weapon_ground = next((weapon for weapon in unit._weapons if weapon.type in TARGET_GROUND), None)
         weapon_air = next((weapon for weapon in unit._weapons if weapon.type in TARGET_AIR), None)
         #TODO: use a namedtuple rather:
-        self.ground_damage = (weapon_ground.damage , weapon_ground.attacks, weapon_ground.speed)
-        self.air_damage = (weapon_air.damage, weapon_air.attacks, weapon_air.speed)
+        if weapon_ground:
+            self.ground_damage = (weapon_ground.damage , weapon_ground.attacks, weapon_ground.speed)
+        else:
+            self.ground_damage = (0, 0, 1)
+
+        if weapon_air:
+            self.air_damage = (weapon_air.damage, weapon_air.attacks, weapon_air.speed)
+        else:
+            self.air_damage = (0, 0, 1)
 
         self.attack_upgrade_factor = ATTACK_UPGRADE_INC.get(self.type_id, ATTACK_UPGRADE_DEFAULT)
         self.bonus_dmg = ATTACK_BONUS_DAMAGE.get(self.type_id, None)
@@ -101,6 +108,11 @@ class UnitMemory:
         # unit.attacking_count_range = 0
         # unit.can_attack_count = 0
         # unit.attack_power = 0.0
+
+        #Used by micro agent to cache network to use:
+        self.move_network = None
+        self.attack_network = None
+        self.special_network = None
 
 
     def got_attribute(self, attr):

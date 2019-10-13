@@ -15,7 +15,7 @@ from BaseAgentA1 import BaseAgentA1
 
 
 class Protagonist(BaseAgentA1, TrainableAgent):
-    def __init__(self, master, *args):
+    def __init__(self, master, global_debug, *args):
         BaseAgentA1.__init__(self, *args)
         TrainableAgent.__init__(self)
         self.master  = master
@@ -28,6 +28,8 @@ class Protagonist(BaseAgentA1, TrainableAgent):
 
         self.do_it = False
         self.do_it2 = False
+
+        self.global_debug = global_debug
 
     async def on_start(self):
         self.master.register_player(self)
@@ -93,8 +95,9 @@ class Protagonist(BaseAgentA1, TrainableAgent):
 
 
 
+
             # Check if scenario ended?
-            self.master.check_scenario_end(self)
+            await self.master.check_scenario_end(self)
 
 
     #protagonist doesn't have a brain at this stage

@@ -97,6 +97,8 @@ class AgentBrain:
         for n in network_names:
             if n in nets:
                 nets[n].score = score
+            else:
+                print(f"Warning: Giving score to non-existing network: {n}")
 
     def get_score(self, race, network_name):
         nets = self.networks[race]
@@ -110,6 +112,9 @@ class AgentBrain:
         if network_name in nets:
             nets[network_name].stars = min(nets[network_name].stars + stars, 4)
             return nets[network_name].stars
+        else:
+            print(f"Warning: Giving stars to non-existing network: {network_name}")
+            return 0
 
     def get_stars(self, race, network_name):
         nets = self.networks[race]

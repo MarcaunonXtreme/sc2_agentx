@@ -97,11 +97,10 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         #print(f"Agent got a new brain! {self.player_id}")
         self.range_attack_network = brain.get_network(self.race, "range_attack", 42, 2)
         self.range_move_network = brain.get_network(self.race, "range_move", 32, 2, hidden_count=16)
-        self.melee_attack_network = brain.get_network(self.race, "range_attack", 42, 2)
-        self.melee_move_network = brain.get_network(self.race, "range_move", 32, 2, hidden_count=16)
+        self.melee_attack_network = brain.get_network(self.race, "melee_attack", 42, 2)
+        self.melee_move_network = brain.get_network(self.race, "melee_move", 32, 2, hidden_count=16)
         self.flying_attack_network = brain.get_network(self.race, "flying_attack", 42, 2)
         self.flying_move_network = brain.get_network(self.race, "flying_move", 32, 2, hidden_count=16)
-        assert isinstance(self.attack_network, AgentBrain.Network)
 
 
     async def on_step(self, iteration: int):
@@ -378,6 +377,18 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             mem.ignore_count -= 1
             return
 
+        if not mem.attack_network or not mem.move_network:
+            if unit.is_flying:
+                mem.attack_network = self.flying_attack_network
+                mem.move_network = self.flying_move_network
+            elif mem.is_melee:
+                mem.attack_network = self.melee_attack_network
+                mem.move_network = self.melee_move_network
+            else:
+                mem.attack_network = self.range_attack_network
+                mem.move_network = self.range_move_network
+
+
         attack_target : Unit = None
         attack_target_mem :UnitMemory = None
         best_pri = -1.0
@@ -546,7 +557,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
             #calculate results:
             #TODO: split between melee/range/air networks!
-            outputs = self.attack_network.process(network_inputs)
+
+            outputs = mem.attack_network.process(network_inputs)
             priority = outputs[0]
 
             if priority > best_pri:
@@ -625,7 +637,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
 
             # Find results from network:
-            outputs = self.move_network.process(inputs)
+            outputs = mem.move_network.process(inputs)
             move_pri[s] += outputs[0] # priority to move in this direction!
             move_pri[(s + 4) % 8] += outputs[1] # priority to run away - ie move in opposite direction
 

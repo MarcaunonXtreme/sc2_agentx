@@ -26,8 +26,9 @@ from MapInfo import MapInfo
 import Flood
 
 from Protagonist1 import Protagonist
+from BotInTraining import BotInTraining
 
-global_debug = True
+global_debug = False
 
 ###Scenario control:
 ## Ultimately we want to play every scenario at least 6 times (for genetic algorithms)
@@ -35,6 +36,9 @@ global_debug = True
 ## Then three times do that with different pairs of agents
 ## At the end of every scenario:
 ##
+
+class EndMapError(Exception):
+    pass
 
 def get_type_id(unit : Unit):
     s = UNIT_TECH_ALIAS.get(unit.type_id,None)
@@ -54,6 +58,7 @@ class XMem:
 class TrainingData:
     def __init__(self, agent):
         self.agent = agent
+        self.step0_setup_done = False
         self.xmem = [] # this is for structures
         self.units = [] # also xmem but for scenario units
         self.position : Point2 = Point2()
@@ -62,7 +67,7 @@ class TrainingData:
 
 
 class TrainingMaster:
-    def __init__(self, nr_brains = 4):
+    def __init__(self, nr_brains = 10):
         self.players = [None, None]
         self.players_data = [None, None]
 
@@ -116,6 +121,7 @@ class TrainingMaster:
 
 
         data : TrainingData = agent.training_data
+        data.step0_setup_done = True
 
         u :Unit
         for u in agent.structures:
@@ -123,10 +129,8 @@ class TrainingMaster:
             tmp.tag = u.tag
             data.xmem.append(tmp)
 
-        # add 1 gas building:
+
         main_base = agent.expansion_locations[agent.start_location]
-        # print("====")
-        # print(main_base)
         main_base: Units = Units(main_base, agent)
 
         #Note: not sure this is really workable?
@@ -156,6 +160,7 @@ class TrainingMaster:
                 data.xmem.append(XMem(UnitTypeId.HATCHERY, loc))
 
                 data.natural_def_location = loc.towards(agent.game_info.map_center, 5)
+                print(f"{agent.player_id} nat defense = f{data.natural_def_location}")
 
                 #TODO: wall?
                 #TODO: defense spines?
@@ -177,6 +182,7 @@ class TrainingMaster:
                 data.xmem.append(XMem(UnitTypeId.ORBITALCOMMAND, loc))
 
                 data.natural_def_location = loc.towards(agent.game_info.map_center, 5)
+                print(f"{agent.player_id} nat defense = f{data.natural_def_location}")
 
                 #TODO: Natural wall?
 
@@ -211,6 +217,7 @@ class TrainingMaster:
                 data.xmem.append(XMem(UnitTypeId.NEXUS, exp_loc))
 
                 data.natural_def_location = exp_loc.towards(agent.game_info.map_center, 5)
+                print(f"{agent.player_id} nat defense = f{data.natural_def_location}")
 
                 loc2 = exp_loc.towards(agent.game_info.map_center, 3)
                 loc = await agent.find_placement(UnitTypeId.PYLON, loc2)
@@ -283,7 +290,7 @@ class TrainingMaster:
 
 
     def end_map_now(self):
-        print("==== ENDING THIS MAP ====")
+        print("==== ENDING THIS SCENARIO ====")
 
         for b in self.brains:
             assert b.used #all brains used once now!
@@ -341,10 +348,11 @@ class TrainingMaster:
             stars = [b.get_stars(race, network_name) for b in self.brains]
             f.write(f"Stars {network_name}: {stars}\r\n")
 
-            best_networks = [b for b in self.brains if b.get_score(race, network_name) >= 2]
+            best_networks = [b for b in self.brains if b.get_stars(race, network_name) >= 2]
             if len(best_networks) == 0:
-                best_networks = [b for b in self.brains if b.get_score(race, network_name) >= 0]
+                best_networks = [b for b in self.brains if b.get_stars(race, network_name) >= 0]
             assert len(best_networks) > 0
+
             for b in kill:
                 kill_count += 1
 
@@ -369,17 +377,16 @@ class TrainingMaster:
         self.round = 0
         self.scenario_setup_done = False  # trigger new scenario setup
         self.scenario_count += 1
-        if self.scenario_count >= 5:
-            print("=== DONE WITH THIS MAP ===")
-            p: sc2.BotAI = self.players[0]
-            p.client.debug_leave()
+
 
 
 
     def end_scenario_now(self, bonus_time):
+
         print("=SCENARIO ENDED=")
         end_time = self.players[0].time
         print(f"Scenario ended in {end_time}")
+
         lost_wealth = []
         for agent in self.players:
             agent.setup_stage = 0
@@ -431,26 +438,39 @@ class TrainingMaster:
         # But what if agents are race specific or other things.
         # Better is to play multiple different agents on the same scenario and then compare to average score.
 
-        self.scenario_setup_done = False # trigger new scenario setup
+        #self.scenario_setup_done = False # trigger new scenario setup
 
 
 
 
-    def check_scenario_end(self,agent :sc2.BotAI):
+    async def check_scenario_end(self,agent :sc2.BotAI):
+
+        end_now = False
 
         if agent.time >= self.end_time:
             print("Scenario ended due to time limit")
-            self.end_scenario_now( self.end_time - agent.time  )
-        if len(agent.structures) <= 2:
+            end_now = True
+
+        elif len(agent.structures) <= 2:
             print("Agent lost too many buildings!")
-            self.end_scenario_now(self.end_time - agent.time)
+            end_now = True
+
         elif len(agent.units) < 12:
             #See if combat units are all gone?
             cnt = agent.units.filter(lambda u: u.type_id not in [UnitTypeId.EGG, UnitTypeId.LARVA, UnitTypeId.MULE, UnitTypeId.BROODLING, UnitTypeId.CREEPTUMOR, UnitTypeId.CREEPTUMORBURROWED, UnitTypeId.CREEPTUMOR, UnitTypeId.CREEPTUMORQUEEN])
             if len(cnt) <= 0:
                 print("Units lost, ending scenario")
-                self.end_scenario_now( self.end_time - agent.time )
+                end_now = True
 
+
+        if end_now:
+            self.end_scenario_now(self.end_time - agent.time)
+
+            if self.scenario_count >= 5:
+                print("=== DONE WITH THIS MAP ===")
+                p: sc2.BotAI = self.players[0]
+                raise EndMapError()
+                #await p.client.debug_leave()
 
 
     def calculation_positions(self):
@@ -476,7 +496,7 @@ class TrainingMaster:
                     #TODO: must check to be far enough from walls?
                     pos_good = True
 
-        elif sc_type ==SCENARIO_TYPE_ATTACK:
+        elif sc_type == SCENARIO_TYPE_ATTACK:
             print("Calculating new scenario position...[ATTACK]")
             tdata : TrainingData = self.players_data[1]
             if tdata.natural_expansion:
@@ -579,6 +599,10 @@ class TrainingMaster:
         assert isinstance(agent, sc2.BotAI)
         assert isinstance(self.players_data[0], TrainingData)
         assert isinstance(self.players_data[1], TrainingData)
+
+        if not self.players_data[0].step0_setup_done or not self.players_data[1].step0_setup_done:
+            return
+
         #print(f"Player {agent.player_id} setup stage = {agent.setup_stage}")
         if not self.scenario_setup_done:
             self.setup_scenario_units()
@@ -693,61 +717,10 @@ class TrainingMaster:
 
 
 
-#TODO: move to other file?
-#this class can inherit anything but must eventually inherit sc2.BotAI to be a bot
-class BotInTraining(MicroAgentC2, TrainableAgent):
-    def __init__(self, master , *args):
-        MicroAgentC2.__init__(self, *args)
-        TrainableAgent.__init__(self)
-        self.master : TrainingMaster = master
 
-        #disable macro and set training mode tactics for now
-        self.disable_macro = True
-        self.disable_strategy = True
-        self.tactic = MicroAgentC2.TACTIC_TRAIN_1 #TODO: fix this
-        self.debug = global_debug
-
-
-    async def on_start(self):
-        self.master.register_player(self)
-        await super(BotInTraining,self).on_start()
-
-
-    async def on_step(self, iteration: int):
-        if iteration == 0:
-            await self.master.step0_setup(self)
-            return
-
-        if self.master.setup_in_progress:
-            #setup is in progress
-            await self.master.setup_scenario(self)
-        else:
-            #Call the normal agent to work
-            await super(BotInTraining,self).on_step(iteration)
-
-            #Check if scenario ended?
-            self.master.check_scenario_end(self)
-
-    async def on_unit_destroyed(self, unit_tag):
-        await super(BotInTraining, self).on_unit_destroyed(unit_tag)
-        #if unit_tag == self.death_struct_tag:
-        #    self.death_struct_tag = -1
-
-    async def on_building_construction_complete(self, unit: Unit):
-        print("New building popped up!!")
-        await super(BotInTraining, self).on_building_construction_complete(unit)
-
-
-
-#create training master
 random.seed()
 np.random.seed()
-
 print("Here we go...")
-
-the_master = TrainingMaster()
-
-#Run training game
 
 #TODO: fix error with flat64 map, apparently expansion at 24.5 / 61.5 is not in the list?
 
@@ -761,10 +734,18 @@ map_names = [
     "WintersGateLE",
     "WorldOfSleepersLE"
 ]
+
+
+
+the_master = TrainingMaster()
+
 map_name = random.choice(map_names)
 print(f"Loading map = {map_name}")
 
 run_game(maps.get(map_name), [
-    Bot(Race.Zerg, Protagonist(the_master)),
-    Bot(Race.Random, Protagonist(the_master)),
+    Bot(Race.Zerg, BotInTraining(the_master, global_debug)),
+    Bot(Race.Random, Protagonist(the_master, global_debug)),
 ], realtime=global_debug)
+
+print("run_game completed")
+
