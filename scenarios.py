@@ -213,8 +213,75 @@ SCENARIOS2 =[
             terran=["range_move", "range_attack"],
             protoss=["range_move", "range_attack"]),
         level = 2
-    )
-
+    ),
+    Scenario(SCENARIO_TYPE_DEFENSE,
+         p1=RaceTuple(
+             zerg=[ScUnits(UnitTypeId.ZERGLING, 2, 6), ScUnits(UnitTypeId.QUEEN, 1, 2)],
+             terran=[ScUnits(UnitTypeId.MARINE, 1, 2), ScUnits(UnitTypeId.REAPER, 0, 1), ScUnits(UnitTypeId.HELLION,0,2)],
+             protoss=[ScUnits(UnitTypeId.ZEALOT, 0, 2), ScUnits(UnitTypeId.STALKER, 0, 1), ScUnits(UnitTypeId.SENTRY,1, 1), ScUnits(UnitTypeId.ADEPT,0,1)],
+         ),
+         p2=RaceTuple(
+             zerg=[ScUnits(UnitTypeId.ZERGLING, 4, 12), ScUnits(UnitTypeId.ROACH, 2, 6)],
+             terran=[ScUnits(UnitTypeId.MARINE, 4, 8), ScUnits(UnitTypeId.MARAUDER, 2, 4)],
+             protoss=[ScUnits(UnitTypeId.ZEALOT, 2, 6), ScUnits(UnitTypeId.STALKER, 2, 4), ScUnits(UnitTypeId.SENTRY, 0,2)],
+         ),
+         networks=RaceTuple(
+         zerg=["range_move", "range_attack", "melee_move", "melee_attack"],
+         terran=["range_move", "range_attack"],
+         protoss=["range_move", "range_attack"]),
+         level=2
+         ),
+    Scenario(SCENARIO_TYPE_DEFENSE,
+         p1=RaceTuple(
+             zerg=[ScUnits(UnitTypeId.ZERGLING, 2, 6), ScUnits(UnitTypeId.QUEEN, 1, 2)],
+             terran=[ScUnits(UnitTypeId.MARINE, 2, 4), ScUnits(UnitTypeId.SIEGETANK, 1, 1)],
+             protoss=[ScUnits(UnitTypeId.ZEALOT, 2, 4), ScUnits(UnitTypeId.SENTRY, 1, 2)],
+         ),
+         p2=RaceTuple(
+             zerg=[ScUnits(UnitTypeId.ZERGLING, 4, 12), ScUnits(UnitTypeId.ROACH, 2, 6)],
+             terran=[ScUnits(UnitTypeId.MARINE, 4, 8), ScUnits(UnitTypeId.MARAUDER, 2, 4)],
+             protoss=[ScUnits(UnitTypeId.ZEALOT, 2, 6), ScUnits(UnitTypeId.STALKER, 2, 4), ScUnits(UnitTypeId.ADEPT, 1, 2)],
+         ),
+         networks=RaceTuple(
+             zerg=["range_move", "range_attack", "melee_move", "melee_attack"],
+             terran=["range_move", "range_attack"],
+             protoss=["range_move", "range_attack", "melee_move", "melee_attack"]),
+         level=2
+         ),
+    Scenario(SCENARIO_TYPE_DEFENSE,
+         p1=RaceTuple(
+             zerg=[ScUnits(UnitTypeId.ZERGLING, 2, 6), ScUnits(UnitTypeId.QUEEN, 1, 3), ScUnits(UnitTypeId.ROACH, 0, 2)],
+             terran=[ScUnits(UnitTypeId.MARINE, 2, 4), ScUnits(UnitTypeId.SIEGETANK, 0, 1), ScUnits(UnitTypeId.MARAUDER, 0, 2)],
+             protoss=[ScUnits(UnitTypeId.ZEALOT, 2, 4), ScUnits(UnitTypeId.SENTRY, 1, 2), ScUnits(UnitTypeId.STALKER,0, 2)],
+         ),
+         p2=RaceTuple(
+             zerg=[ScUnits(UnitTypeId.ZERGLING, 6, 12), ScUnits(UnitTypeId.ROACH, 2, 6), ScUnits(UnitTypeId.BANELING, 3, 6)],
+             terran=None,
+             protoss=None,
+         ),
+         networks=RaceTuple(
+             zerg=["range_move", "range_attack", "melee_move", "melee_attack"],
+             terran=["range_move", "range_attack"],
+             protoss=["range_move", "range_attack", "melee_move", "melee_attack"]),
+         level=2
+         ),
+    Scenario(SCENARIO_TYPE_ATTACK,
+         p1=RaceTuple(
+             zerg=[ScUnits(UnitTypeId.ZERGLING, 4, 8), ScUnits(UnitTypeId.ROACH, 4, 8)],
+             terran=[ScUnits(UnitTypeId.MARINE, 3, 6), ScUnits(UnitTypeId.MARAUDER, 3, 6)],
+             protoss=[ScUnits(UnitTypeId.ZEALOT, 2, 5), ScUnits(UnitTypeId.STALKER, 4, 8)]
+         ),
+         p2=RaceTuple(
+             zerg=[ScUnits(UnitTypeId.ZERGLING, 4, 12), ScUnits(UnitTypeId.ROACH, 3, 6), ScUnits(UnitTypeId.QUEEN, 1, 3), ScUnits(UnitTypeId.BANELING, 1, 3)],
+             terran=[ScUnits(UnitTypeId.MARINE, 4, 8), ScUnits(UnitTypeId.SIEGETANK, 1, 1), ScUnits(UnitTypeId.MARAUDER, 1, 4)],
+             protoss=[ScUnits(UnitTypeId.ZEALOT, 2, 4), ScUnits(UnitTypeId.SENTRY, 1, 4), ScUnits(UnitTypeId.STALKER, 4, 8)]
+         ),
+         networks=RaceTuple(
+             zerg=["range_move", "range_attack", "melee_move", "melee_attack"],
+             terran=["range_move", "range_attack"],
+             protoss=["range_move", "range_attack", "melee_move", "melee_attack"]),
+         level=2
+         ),
 ]
 
 
