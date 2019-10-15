@@ -48,6 +48,7 @@ class Protagonist(BaseAgentA1, TrainableAgent):
         #         pickle.dump(labels, f)
 
 
+
     async def on_building_construction_complete(self, unit: Unit):
         print("New building popped up!!")
         await super(Protagonist, self).on_building_construction_complete(unit)
@@ -91,7 +92,9 @@ class Protagonist(BaseAgentA1, TrainableAgent):
 
             else:
                 #Process units
-                pass
+                if iteration % 8 == 0:
+                    await self.process_units()
+                
 
 
 
@@ -99,6 +102,71 @@ class Protagonist(BaseAgentA1, TrainableAgent):
             # Check if scenario ended?
             await self.master.check_scenario_end(self)
 
+
+    async def process_units(self):
+        
+        if not self.enemy_units:
+            return 
+
+        u : Unit 
+        for u in self.units:
+
+            if u.type_id == UnitTypeId.RAVAGER:
+                await self.process_ravager(u)
+
+            #This is just a simple method, can improve a lot obviously
+            #Attack towards closest enemy unit.
+            e = self.enemy_units.closest_to(u)
+            if e:
+                self.do(u.attack(e.position))
+
+
+
+
+
+    async def process_ravager(self, u : Unit):
+        #TODO: if on cd use corrosive bile on random target
+        pass
+
+    async def process_queen(self, u : Unit):
+        #TODO: if enough energy use heal ability on a friendly in need
+        pass
+
+    async def process_MM(self, u:Unit):
+        #TODO: if enemies in range and hp > threshold -> activate stimpack
+        pass
+    
+    async def process_reaper(self, u:Unit):
+        #TODO: KD8 charge a target?
+        pass
+
+    async def process_tank(self, u:Unit):
+        #TODO: switch modes
+        pass 
+
+    async def process_stalker(self,u :Unit):
+        #TODO: if enemies in range and shields down blink away from closest unit.
+        #TODO: if enemies very close also blink away maybe?
+        pass
+
+    async def process_sentry(self, u : Unit):
+        #TODO: if enemy units on main base ramp - FF it.
+        #TODO: if range enemy units nearby use guardian shield maybe
+        #TODO: use force fields to scatter enemy units
+        pass
+
+    async def process_adept(self, u:Unit):
+        #TODO: use psionic transfer somehow?
+        pass
+    
+    async def process_highTemplar(self, u: Unit):
+        #TODO: use feedback on enemy units randomly with above threshold energy
+        #TODO: randomly use storm if over 150 energy. (randomly target enemy units?)
+        pass
+
+    async def process_disruptor(self, u :Unit):
+        #TODO: use purification nova and try to approach enemy units with it.
+        pass
 
     #protagonist doesn't have a brain at this stage
     def use_brain(self, brain : AgentBrain):
