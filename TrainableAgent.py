@@ -10,6 +10,7 @@ class TrainableAgent:
     def __init__(self):
         self.training_data = None
         self.setup_stage = 0
+        self.end_wealth = 0
 
     #Set a new brain to use
     def use_brain(self, brain : AgentBrain):

@@ -36,6 +36,8 @@ class Protagonist(BaseAgentA1, TrainableAgent):
         self.enemy_location_0 = self.game_info.map_center
         await super(Protagonist,self).on_start()
 
+        await self.client.debug_show_map()
+
         # if self.player_id == 1:
         #     distance_from = Flood.calculate_distance_from_unpathable(self.game_info.pathing_grid)
         #     with open("dist_from1.p","wb") as f:
@@ -104,16 +106,17 @@ class Protagonist(BaseAgentA1, TrainableAgent):
 
 
     async def process_units(self):
-        
+
         if not self.enemy_units:
             return 
 
         u : Unit 
         for u in self.units:
 
-            if u.type_id == UnitTypeId.RAVAGER:
-                await self.process_ravager(u)
+            #if u.type_id == UnitTypeId.RAVAGER:
+            #    await self.process_ravager(u)
 
+            #Fallback, attack towards closest enemy for now
             #This is just a simple method, can improve a lot obviously
             #Attack towards closest enemy unit.
             e = self.enemy_units.closest_to(u)

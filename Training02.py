@@ -28,7 +28,7 @@ import Flood
 from Protagonist1 import Protagonist
 from BotInTraining import BotInTraining
 
-global_debug = False
+global_debug = True
 
 ###Scenario control:
 ## Ultimately we want to play every scenario at least 6 times (for genetic algorithms)
@@ -390,9 +390,9 @@ class TrainingMaster:
         lost_wealth = []
         for agent in self.players:
             agent.setup_stage = 0
-            m, v = agent.calculate_wealth(agent)
+            m, v = agent.calculate_wealth()
             wealth = m + v * 1.5
-            #print(f"Player {agent.player_id} end wealth = {wealth}")
+            print(f"Player {agent.player_id} end wealth = {wealth}")
             lost_wealth.append(abs(wealth - agent.start_wealth))
 
         #TODO: adjust also based on time taken
@@ -557,7 +557,8 @@ class TrainingMaster:
 
         good_sc = False
         while not good_sc:
-            self.scenario : Scenario = random.choice(SCENARIOS2)
+            #self.scenario : Scenario = random.choice(SCENARIOS2)
+            self.scenario : Scenario = SCENARIOS2[-1]
 
             pp = list()
             pp.append(get_race_scunits(self.scenario, 1, self.players[0].race))
@@ -581,7 +582,8 @@ class TrainingMaster:
                 assert isinstance(units, ScUnits)
                 tmp = XMem(units.type_id)
                 tmp.amount = random.randint(units.min,units.max)
-                data.units.append(tmp)
+                if tmp.amount:
+                    data.units.append(tmp)
 
 
     async def create_scenario_units(self, agent, data):
@@ -707,7 +709,7 @@ class TrainingMaster:
             m, v = agent.calculate_wealth()
             agent.start_wealth = m + v*1.5
             self.end_time = agent.time + 60.0 # 60 seconds is more than enough time
-            #print(f"player {agent.player_id} scenario start wealth = {agent.start_wealth}")
+            print(f"player {agent.player_id} scenario start wealth = {agent.start_wealth}")
 
             #Maybe give units commands
             if agent.player_id == 1:

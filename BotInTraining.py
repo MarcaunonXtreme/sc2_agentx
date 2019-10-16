@@ -44,6 +44,17 @@ class BotInTraining(MicroAgentC2, TrainableAgent):
             #Call the normal agent to work
             await super(BotInTraining,self).on_step(iteration)
 
+            #Kill units that ran away:
+            killme = []
+            u : Unit
+            for u in self.units:
+                if u.distance_to(self.enemy_location_0) > 36.0:
+                    killme.append(u.tag)
+
+            if killme:
+                print(f"Killing {len(killme)} units")
+                await self.client.debug_kill_unit(killme)
+
             #Check if scenario ended?
             await self.master.check_scenario_end(self)
 
