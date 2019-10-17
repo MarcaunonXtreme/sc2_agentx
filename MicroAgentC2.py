@@ -127,6 +127,9 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             mem.attack_count_range = 0
 
             mem.surround_length = 0
+
+            mem.closest_friendly_dist = 10.0
+            mem.closest_friendly_tag = 0
             #unit.attacking_count_melee = 0
             #unit.attacking_count_range = 0
             #unit.can_attack_count = 0
@@ -145,6 +148,9 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             mem.attack_count_range = 0
 
             mem.surround_length = 0
+
+            mem.closest_friendly_dist = 10.0
+            mem.closest_friendly_tag = 0
 
             #unit.attacking_count_melee = 0
             #unit.attacking_count_range = 0
@@ -201,11 +207,14 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                         #some unit<>enemy calculations
                         dist_to_enemy = unit.distance_to(enemy.position) - unit.radius - enemy.radius
 
-
+                        if dist_to_enemy < enemy.closest_friendly_dist:
+                            enemy.closest_friendly_dist = dist_to_enemy
+                            enemy.closest_friendly_tag = unit.tag
                         mem.closest_enemy_dist = min(mem.closest_enemy_dist, dist_to_enemy)
 
                         if dist_to_enemy <= 0.5:
-                            mem.surround_length += 2*unit.radius
+                            enemy.surround_length += 2*unit.radius
+                            mem.surround_length += 2*enemy.radius
 
                         #Generate RADAR information
                         s = determine_slice_nr(mem.position, enemy.position)
@@ -552,6 +561,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
             network_inputs[36] = 1.0 if dist_to_enemy < mem.closest_enemy_dist + 0.35 else 0.0
 
+            network_inputs[37] = 1.0 if unit.tag == enemy_mem.closest_friendly_tag else 0.0
+
             #TODO: aoe units?
 
             #TODO: temporary units?
@@ -619,8 +630,6 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         for s in range(8):
             dest_position : Point2 = mem.position + (slice_delta[s] * 0.5)
 
-            
-
             #inputs = np.copy(mem.radar[s])
             inputs = np.zeros(mem.radar[s].shape)
             mem_radar = mem.radar[s]
@@ -673,8 +682,9 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
             #a few general inputs:
             inputs[26] = unit_hp
-            inputs[27] = 1.0 if unit.is_cloaked or unit.is_burrowed else 0.0            
+            inputs[27] = 1.0 if unit.is_cloaked or unit.is_burrowed else 0.0
             inputs[28] = 1.0 if self.has_creep(unit) else 0.0
+            inputs[29] = min(1.0,mem.surround_length / (2*math.pi*unit.radius))
             #inputs[29] = 1.0 if unit.weapon_cooldown else 0.0
             #inputs[30] = mem.speed2 # current speed
 
@@ -690,21 +700,25 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
             # Find results from network:
             outputs = mem.move_network.process(inputs)
+            outputs[0] = np.clip(outputs[0],-1.5,1.5)
             move_pri[s] += outputs[0] # priority to move in this direction!
             move_pri[(s + 4) % 8] -= outputs[0] # priority to run away = opposite of this one obviously
             if outputs[1] > 0:
                 #Flanking priority
-                outputs[1] *= 0.25
+                outputs[1] = min(1.0, outputs[1]*0.25)
                 move_pri[(s + 2) % 8] += outputs[1]
                 move_pri[(s - 2) % 8] += outputs[1]
 
 
         # If attack target out of range transform into a move command in said direction rather
-        if best_pri >= 0.0 and not attack_target_in_range:
-            s = determine_slice_nr(mem.position, attack_target.position)
-            move_pri[s] += 1.0
-            best_pri = -1
-            attack_target = None
+        if best_pri >= 0.0:
+            attack_target_slice = determine_slice_nr(mem.position, attack_target.position)
+            if attack_target_in_range:
+                move_pri[attack_target_slice] += 0.1
+            else:
+                move_pri[attack_target_slice] += 1.0 # this will help us get closer to target we want to kill
+                best_pri = -1
+                attack_target = None
 
         # Calculate move priority across the 8 directions:
         move_pri2 = np.zeros(8)
@@ -721,6 +735,10 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         best_slice = move_pri2.argmax()
         move_pri = move_pri2[best_slice]
 
+        if best_slice == attack_target_slice:
+            #We moving in direction we want to attack...
+            pass
+
         if not mem.is_melee and unit.weapon_cooldown >= 1.0:
             move_pri *= 1.5 #boost move priority for stutter stepping on range units
 
@@ -731,7 +749,12 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             if self.debug:
                 self.draw_debug_line(unit, unit.position + slice_delta[best_slice], (50,255,50))
 
-            self.do(unit.move(unit.position + slice_delta[best_slice]))
+            if attack_target and best_slice == attack_target_slice:
+                #well, might as well move closer to what we want to attack (this avoids running past enemy units)
+                self.do(unit.move(attack_target.position))
+            else:
+                #move in this general slice direction
+                self.do(unit.move(unit.position + slice_delta[best_slice]))
 
         elif attack_target:
             #attack time!

@@ -71,6 +71,7 @@ The rest of these values are calculated for each enemy considered for attack tar
 
 36 - 1.0 if enemy is one of the "closest" enemies [helps focus fire/attack closest enemies first greatly!]
 
+37 - 1.0 if we are the closest friendly unit to this enemy. [This is usefull for some mechanics other than shooting also]
 
 
 

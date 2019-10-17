@@ -1,4 +1,4 @@
-= move network intputs ==
+= move network inputs ==
 
 This network has 42 inputs currently.
 Is executed once for each of the 8 directions.
@@ -27,6 +27,12 @@ If the selected attack target is sufficiently out of range.
 distance > attack_range + 1 + speed*0.5
 TODO: figure out exactly what movement_speed units are!
 
+*Attack in move direction*
+There is an exception here.
+If we have an attack target that is not out of range.
+We then add +0.2 move priority in that direction.
+
+
 In this case we add a 1.0 attack priority in the direction of the target and remove the attack target.
 This means when targetting far away things the movement stuff can allow units to move "better"... theoretically at least.
 
@@ -34,6 +40,14 @@ This means when targetting far away things the movement stuff can allow units to
 
 If we can't move in a specific direction (in_pathing_grid) then we will avoid that movement always.
 
+
+I'm still uncertain about 1 thing.
+Two options:
+A) Simply take the highest priority of the 8 directions and work with that
+B) Normalize the priorities in some way, maybe subtract the lowest priority from all, then after that takes highest.
+
+In some way it make sense to not run in one direction if priority in opposite direction is very similar!
+Couldn't this create oscilations?
 
 
 ==Centre of Gravity==
@@ -76,7 +90,7 @@ Note all this is calculated only for each slice!
 6 = number of total enemies that we are in range of
 
 7 = how far we can move back and still keep an enemy in range (assuming enemy stands still)
-8 = TODO
+8 = 
 
 
 == INPUTS ==
@@ -98,6 +112,8 @@ we start by copying the data from mem.radar[s] for the slice then fill in the re
 7 = 1.0 if we can move back and still keep enemy in range (compares ranges with speed)
 
 
+
+
 Based on E and F: (requires testing visually)
 
 16 = approach/retreat friendly centre of gravity [this is not to spread out or clump up]
@@ -111,8 +127,7 @@ a few general inputs:
 26 = unit_hp percentage
 27 = is cloaked/burrowed
 28 = if on creep currently
-29 = weapon cooldown - currently disabled
-30 = current speed - disabled
+29 = factor of how surrounded we are by enemy units (in melee range). [this is usefull for melee units to be able to run away if out gunned) TODO: improve?
 
 
 Looking in only 1 direction isn't necessarily such a good idea as sometimes having a wider idea of how the battlefield looks around us is necessary.

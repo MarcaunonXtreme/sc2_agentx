@@ -12,8 +12,10 @@ from sc2.dicts.upgrade_researched_from import UPGRADE_RESEARCHED_FROM
 
 
 
+# Stores time values of when an upgrade can be researched on the earliest possible time.(not perfect yet)
 UPGRADE_MINIMUM_TIMING = np.zeros(312)
 
+#TODO: still need a way to manage all of this at run-time to actually keep track of enemy upgrades in the agent.
 
 
 

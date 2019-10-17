@@ -91,6 +91,7 @@ class UnitMemory:
             self.attacking_previous_range = 0
             self.attack_count_melee = 0
             self.attack_count_range = 0
+            
         else:
             #for friendlies:
             self.enemy_in_range_count = 0
@@ -102,7 +103,10 @@ class UnitMemory:
             self.friendly_centre : Point2 = None # Centre of gravity of friendly units
             self.enemy_centre : Point2 = None # Centre of gravity of enemy units
 
+            self.closest_enemy_dist = 10.0
+
         #both:
+        self.surround_length = 0.0
         self.can_attack_count = 0
         #unit.attacking_count_melee = 0
         # unit.attacking_count_range = 0
