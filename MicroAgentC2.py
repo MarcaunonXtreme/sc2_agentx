@@ -230,7 +230,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                             # see if enemy is facing us?
                             angle = math.atan2(unit.position.y - enemy.position.y, unit.position.x - enemy.position.x) - enemy.facing
                             angle = min(math.fabs(angle), math.fabs(angle - math.pi*2))
-                            if angle < 0.020: #Not sure how find to make this
+                            if angle < 0.030: #Not sure how find to make this
                                 if enemy.is_melee:
                                     #TODO: scale this by some kind of threat calculation?
                                     if dist_to_enemy < enemy_attack_range + 0.6:
@@ -244,7 +244,9 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                                 mem.radar[s,6] += 1
 
                             #7 = how far can we move back and still have enemy in range?
-                            mem.radar[s,7] = max(mem.radar[s,7], attack_range - dist_to_enemy - 0.1)
+                            mem.radar[s,7] = max(mem.radar[s,7], attack_range - dist_to_enemy)
+                            #8 = 
+                            mem.radar[s,8] = 0
 
                 if mem.enemy_in_range_count:
                     mem.enemy_centre = Point2((enemy_centre[0] / mem.enemy_in_range_count, enemy_centre[1] / mem.enemy_in_range_count))
@@ -586,7 +588,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                 best_pri = priority
                 attack_target = enemy
                 attack_target_mem = enemy_mem
-                attack_target_in_range = (dist_to_enemy <= (attack_range + 1.0 + unit.movement_speed*0.2))
+                attack_target_in_range = (dist_to_enemy <= (attack_range + 1.0 + unit.movement_speed*0.5))
 
         # TODO: fix drones with specialization that they can defend correctly rather than just flee!
         # Drones should only be pulled in correct amounts
@@ -617,37 +619,49 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         for s in range(8):
             dest_position : Point2 = mem.position + (slice_delta[s] * 0.5)
 
-            inputs = np.copy(mem.radar[s])
+            
+
+            #inputs = np.copy(mem.radar[s])
+            inputs = np.zeros(mem.radar[s].shape)
+            mem_radar = mem.radar[s]
             #scale normalizations for network required firstly:
-            inputs[0] = min(1.0, inputs[0] * 0.25) #dist 2 closest friendly unit
-            inputs[1] = min(1.0, inputs[1] * 0.25) #dist 2 closest enemy
-            inputs[2] = min(1.0, inputs[2] / 8) # nr of friendlies in this slice
-            inputs[3] = min(1.0, inputs[3] / 8) # nr of enemies in this slice
-            inputs[4] = min(1.0, inputs[4] / 8) # melee units facing us in this direction (and in range)
-            inputs[5] = min(1.0, inputs[5] / 8) # ranges units facing us in this direction (and in range)
-            inputs[6] = min(1.0, inputs[6] / 16) # enemy units that have us in range
-            inputs[7] = min(1.0, inputs[7] * 0.25) # how far we can move back and still keep "an" enemy in range
-            inputs[8] = min(1.0, inputs[8] * 0.25) # how far we need to move back to escape enemy range
+            inputs[0] = min(1.0, mem_radar[0] * 0.25) #dist 2 closest friendly unit
+            inputs[1] = min(1.0, mem_radar[1] * 0.25) #dist 2 closest enemy
 
+            inputs[2] = 1.0 if mem_radar[2] else 0.0
+            inputs[3] = 1.0 if mem_radar[3] else 0.0
+            #inputs[2] = min(1.0, inputs[2] / 8) # nr of friendlies in this slice
+            #inputs[3] = min(1.0, inputs[3] / 8) # nr of enemies in this slice
 
-            #friendly/enemies in slices next to this one (wider radar)
-            # not sure what is best to use? maybe distance rather?
-            inputs[33] = min(1.0, mem.radar[(s + 1) % 8][2] / 8)
-            inputs[34] = min(1.0, mem.radar[(s - 1) % 8][2] / 8)
-            inputs[35] = min(1.0, mem.radar[(s + 1) % 8][3] / 8)
-            inputs[36] = min(1.0, mem.radar[(s - 1) % 8][3] / 8)
+            inputs[4] = min(1.0, mem_radar[4] / 4) # melee units facing us in this direction (and in range)
+            inputs[5] = min(1.0, mem_radar[5] / 4) # ranges units facing us in this direction (and in range)
 
+            inputs[6] = 1.0 if mem_radar[6] else 0.0 # enemy has us ranged!
 
+            #TODO: use real movement_speed, AND scape this 0.2 correctly!
+            inputs[7] = 1.0 if mem_radar[7] > unit.movement_speed * 0.2 else 0.0
+            #inputs[7] = min(1.0, inputs[7] * 0.25) # how far we can move back and still keep "an" enemy in range
+            #inputs[8] = min(1.0, inputs[8] * 0.25) # how far we need to move back to escape enemy range
 
             if mem.friend_in_range_count > 0 and mem.enemy_in_range_count > 0:
                 E2 = mem.enemy_centre.distance_to(dest_position)
                 F2 = mem.friendly_centre.distance_to(dest_position)
 
-                inputs[16] = np.clip( E2-E, -1.0, 1.0) #approach/retreat enemy centre
-                inputs[17] = np.clip( F2-F, -1.0, 1.0) #approach/retreat friendly centre
-                inputs[18] = np.clip( (F-E) - (F2-E2) , -1.0, 1.0) #Approach/retreat from battle line
-                inputs[19] = np.clip( (F-E) / 8.0, -1.0, 1.0) # general input to help determine where we at
-                inputs[20] = np.clip( (F2+E2) - (F+E) , -1.0, 1.0) # moving towards/away from the centre line (helps with flanking?)
+                #closer/further from our own centre?
+                if abs(F2-F) > 0.5:
+                    inputs[16] = np.sign(F2 - F) #approach/retreat friendly centre
+
+                if E2-E > 0.5:
+                    inputs[17] = 1.0 #this is the escape direction, moving away from enemies
+
+                tmpb = (F-E) - (F2-E2)
+                if abs(tmpb) > 0.5:
+                    inputs[18] = np.sign(tmpb) #approach/restreat relative to battle line
+                
+                if F2-F > 0.66 and abs(tmpb) < 0.25:
+                    inputs[19] = 1.0 #Flanking direction
+
+
 
             #TODO: compare distance from battle line with range to help units align correctly before they engage?
             #TODO: some normalization of highest attack priority target found in this slice direction (from attack network calculation)
@@ -658,13 +672,20 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             #TODO: AOE information
 
             #a few general inputs:
-            inputs[31] = unit_hp
-            inputs[30] = 1.0 if mem.is_melee else 0.0
-            inputs[29] = 1.0 if unit.is_cloaked or unit.is_burrowed else 0.0
-            if self.is_zerg:
-                inputs[28] = 1.0 if self.has_creep(unit) else 0.0
-            inputs[27] = min(1.0, unit.weapon_cooldown / 2.0)
-            inputs[26] = mem.speed2 # current speed
+            inputs[26] = unit_hp
+            inputs[27] = 1.0 if unit.is_cloaked or unit.is_burrowed else 0.0            
+            inputs[28] = 1.0 if self.has_creep(unit) else 0.0
+            #inputs[29] = 1.0 if unit.weapon_cooldown else 0.0
+            #inputs[30] = mem.speed2 # current speed
+
+
+            #friendly/enemies in slices next to this one (wider radar)
+            # not sure what is best to use? maybe distance rather?
+            inputs[34] = 1.0 if mem.radar[(s+1) % 8][2] else 0.0
+            inputs[35] = 1.0 if mem.radar[(s-1) % 8][2] else 0.0
+            inputs[36] = 1.0 if mem.radar[(s+1) % 8][3] else 0.0
+            inputs[37] = 1.0 if mem.radar[(s-1) % 8][3] else 0.0
+
 
 
             # Find results from network:
@@ -673,7 +694,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             move_pri[(s + 4) % 8] -= outputs[0] # priority to run away = opposite of this one obviously
             if outputs[1] > 0:
                 #Flanking priority
-                outputs[1] *= 0.5
+                outputs[1] *= 0.25
                 move_pri[(s + 2) % 8] += outputs[1]
                 move_pri[(s - 2) % 8] += outputs[1]
 
@@ -688,7 +709,14 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         # Calculate move priority across the 8 directions:
         move_pri2 = np.zeros(8)
         for s in range(8):
-            move_pri2[s] = move_pri[s] + (move_pri[(s-1)%8] + move_pri[(s+1)%8])*0.6 + (move_pri[(s-2)%8] + move_pri[(s+2)%8])*0.1
+            move_pri2[s] = move_pri[s] + (move_pri[(s-1)%8] + move_pri[(s+1)%8])*0.5 + (move_pri[(s-2)%8] + move_pri[(s+2)%8])*0.1
+
+        #remove directions that are not pathable:
+        if not unit.is_flying:
+            for s in range(8):
+                dest_position : Point2 = mem.position + (slice_delta[s] * 0.5)
+                if not self.in_pathing_grid(dest_position):
+                    move_pri2[s] = -10.0
 
         best_slice = move_pri2.argmax()
         move_pri = move_pri2[best_slice]

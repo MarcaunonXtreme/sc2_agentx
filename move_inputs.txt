@@ -1,0 +1,145 @@
+= move network intputs ==
+
+This network has 42 inputs currently.
+Is executed once for each of the 8 directions.
+
+Outputs 2 values:
+0 = forward/backwards 
+ If positive = priority to move in this direction
+ If negative = priority to move in opposite direction (move away)
+1 = flank
+  If positive only = priority to move in 90 degree directions
+  Gets a static X 0.25 multiplier (reduces chaos early training hopefully)
+
+
+After the 8 cycles we calculate the priorities for each direction.
+This takes priorities of the 45 degrees and 90 degrees into account also.
+Then the highest priority is picked.
+
+3 ways to move:
+1> If not melee and weapon cooldown then if priority > 0.5 we move.
+2> No attack target is selected
+3> move priority > 2.0 
+
+
+*attack target conversion*
+If the selected attack target is sufficiently out of range.
+distance > attack_range + 1 + speed*0.5
+TODO: figure out exactly what movement_speed units are!
+
+In this case we add a 1.0 attack priority in the direction of the target and remove the attack target.
+This means when targetting far away things the movement stuff can allow units to move "better"... theoretically at least.
+
+==Some hardcoded stuff==
+
+If we can't move in a specific direction (in_pathing_grid) then we will avoid that movement always.
+
+
+
+==Centre of Gravity==
+
+For both local friendly and enemy units we calculate a "centre" or "mean" position.
+We call these to locations E and F.
+
+If distance between E and F is small (less than 3.0) then units are generally so on-top of each other there aren't really a battle line anymore.
+
+But otherwise this can be very cool:
+
+We can calculate the following depending on how our unit moves relative to E and F:
+> closer to E = closer to enemy centre 
+> closer to F = closer further from enemy centre (this is nice for spreading out)
+> dist_to(E) - dist_to(F) is the relative position across the battle line as such
+>> so if we move such that that is increased we are approach enemies, else move away
+>> If dist_to(E) - dist_to(F) > 0 then we are ahead on the enemy side of the battle line!
+> If dist_to(F) > dist_E_F then we are behind our battle line essentially in a "safe" position
+
+> If we move such that dist_to(E) + dist_to(F) increases we are moving away from the battle all together
+
+But most importantly we can determine how to flank from this.
+> We need to move away from F (ie spread out from our own centre
+> But we need to stay on the battle line - therefore keep dist_to(E) - dist_to(F) ~ constant
+
+
+==pre calculations==
+
+During the pre-step we calculate certain values into mem.radar for our units.
+Note all this is calculated only for each slice!
+
+0 = distance to closest friendly unit
+1 = distance to closest enemy unit
+2 = number of friendly units in local area
+3 = number of enemy units in local area 
+
+4 = number of melee enemies in range and facing us
+5 = number of range enemies in range and facing us 
+
+6 = number of total enemies that we are in range of
+
+7 = how far we can move back and still keep an enemy in range (assuming enemy stands still)
+8 = TODO
+
+
+== INPUTS ==
+
+Note that all these values are normalized/scaled/clipped as necessary
+we start by copying the data from mem.radar[s] for the slice then fill in the rest and modify as required.
+
+0 = distance to closest friend (1.0 generally means nothing is close)
+1 = distance to closest enemy (1.0 means nothing is close)
+
+2 = 1.0 if we have 1 or more friends in this slice
+3 = 1.0 if we have 1 or more enemies in this slice
+
+4 = number of melee enemies in range and facing us (1.0 = 4+)
+5 = number of range enemies in range and facing us (1.0 = 4+)
+
+6 = 1.0 if at least one enemy has us in range
+
+7 = 1.0 if we can move back and still keep enemy in range (compares ranges with speed)
+
+
+Based on E and F: (requires testing visually)
+
+16 = approach/retreat friendly centre of gravity [this is not to spread out or clump up]
+17 = 1.0 if this is away from enemy centre [this is the escape direction]
+18 = move forward/backwards relative to the battle line 
+19 = 1.0 if this is the flanking direction
+
+
+
+a few general inputs:
+26 = unit_hp percentage
+27 = is cloaked/burrowed
+28 = if on creep currently
+29 = weapon cooldown - currently disabled
+30 = current speed - disabled
+
+
+Looking in only 1 direction isn't necessarily such a good idea as sometimes having a wider idea of how the battlefield looks around us is necessary.
+
+34 = 1.0 if enemies in +45 degree slice
+35 = 1.0 if enemies in -45 degree slice
+36 = 1.0 if friendlies in +45 degree slice
+37 = 1.0 if friendlies in -45 degree slice
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
