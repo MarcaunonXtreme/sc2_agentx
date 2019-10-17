@@ -125,6 +125,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
             mem.attack_count_melee = 0
             mem.attack_count_range = 0
+
+            mem.surround_length = 0
             #unit.attacking_count_melee = 0
             #unit.attacking_count_range = 0
             #unit.can_attack_count = 0
@@ -142,6 +144,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             mem.attack_count_melee = 0
             mem.attack_count_range = 0
 
+            mem.surround_length = 0
+
             #unit.attacking_count_melee = 0
             #unit.attacking_count_range = 0
             #unit.can_attack_count = 0
@@ -158,14 +162,6 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             #TODO: this method sucks, should mark the map area based on distance from all bases (and all structures)
 
         #process units - pre cycle
-        ## Precycle determine the following variables for friendly units:
-        ### got_enemies : bool - enemies in "era"
-        ### enemy_can_attack_count : float - more or less how many enemies can attack us
-        ### enemy_attack_power : float - a number indicating the "power projection" the enemy has against this unit
-        ## Precycle determine the following variables for enemy units:
-        ### can_attack_count : float - more or less how many friendly units can attack this enemy
-        ### attack_power : float - a number indicating the "power projection" against this eney
-        #_unit_mod = iteration % 3
         #TODO: my own static-D?! (especially for zerg)
 
         for unit in self.units:
@@ -206,6 +202,10 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                         dist_to_enemy = unit.distance_to(enemy.position) - unit.radius - enemy.radius
 
 
+                        mem.closest_enemy_dist = min(mem.closest_enemy_dist, dist_to_enemy)
+
+                        if dist_to_enemy <= 0.5:
+                            mem.surround_length += 2*unit.radius
 
                         #Generate RADAR information
                         s = determine_slice_nr(mem.position, enemy.position)
@@ -214,14 +214,18 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                         mem.radar[s,3] += 1 #scale somehow?
 
 
-                        if enemy.missing == 0:
+                        if enemy.missing == 0: # currently visible enemy we can see
 
+                            #TODO: use actual values that take upgrades/buffs into consideration
                             attack_range = unit.air_range if enemy.unit.is_flying else unit.ground_range
                             enemy_attack_range = enemy.unit.air_range if unit.is_flying else enemy.unit.ground_range
 
                             # Update can_attack_count - useful for managing attack priorities
-                            ratio = 1.0 / max(1.0, 1.0 + (dist_to_enemy - attack_range) * 5.0 / max(unit.movement_speed, 1.0))
-                            enemy.can_attack_count += ratio
+                            # Note: simplified:
+                            #ratio = 1.0 / max(1.0, 1.0 + (dist_to_enemy - attack_range) * 5.0 / max(unit.movement_speed, 1.0))
+                            #enemy.can_attack_count += ratio
+                            enemy.can_attack_count += 1.0 if dist_to_enemy < (attack_range + 0.25) else 0.0
+                            
 
                             # see if enemy is facing us?
                             angle = math.atan2(unit.position.y - enemy.position.y, unit.position.x - enemy.position.x) - enemy.facing
@@ -436,9 +440,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         if self.is_zerg:
             general_inputs[3] = 1.0 if self.has_creep(unit) else 0.0
 
-        general_inputs[4] = min(1.0, unit.weapon_cooldown / 2.0)
 
-        general_inputs[5] = unit.energy / 200.0
+        general_inputs[4] = unit.energy / 200.0
 
 
         #This loop is to decide on attack targets
@@ -456,21 +459,27 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             network_inputs = np.copy(general_inputs)
 
             enemy_hp = (enemy.health + enemy.shield) / (max(1, enemy.health_max + enemy.shield_max))
-            network_inputs[8] = enemy_hp
+            network_inputs[7] = enemy_hp
 
             #Ranged based information:
             dist_to_enemy = unit.distance_to(enemy) - unit.radius - enemy.radius
+            #TODO: update to use REAL ranges!
+
             attack_range = unit.air_range if enemy.is_flying else unit.ground_range
-            if attack_range <= 0 or dist_to_enemy >= 15.0: #TODO: make this 15.0!
+            if attack_range <= 0 or dist_to_enemy >= 15.0: 
                 continue #can't attack this enemy
-            #TODO: there is a range related to dist and speed where we don't consider an enemy for attack anymore even if within 15.0 units??
+            
+            # If enemy to far for this unit currently then considering it for attacking is pointless at this time.
+            if dist_to_enemy > 1.0 + attack_range + 4*unit.movement_speed:
+                continue
+
 
             enemy_attack_range = enemy.air_range if unit.is_flying else enemy.ground_range
             #dps = unit.air_dps if enemy.is_flying else unit.ground_dps
             #enemy_dps = enemy.air_dps if unit.is_flying else enemy.ground_dps
 
             #enemy already in range
-            network_inputs[8] = 1.0 if dist_to_enemy <= attack_range else 0.0
+            network_inputs[8] = 1.0 if dist_to_enemy <= attack_range+0.1 else 0.0
             # 1.0 if enemy is in range, else scales down towards 0.0 based on this units speed
             network_inputs[9] = 1.0 / max(1.0, 1.0 + (dist_to_enemy - attack_range)/max(0.1, unit.movement_speed) )
             # The reverse for the enemy
@@ -482,8 +491,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             network_inputs[12] = min(enemy_mem.attacking_previous_range / 8.0, 1.0)
             network_inputs[13] = min(enemy_mem.attacking_previous_melee / 8.0, 1.0)
             #How many is targeting it this tick?
-            network_inputs[14] = min(enemy_mem.attack_count_range / 8.0, 1.0)
-            network_inputs[15] = min(enemy_mem.attack_count_melee / 8.0, 1.0)
+            #network_inputs[14] = min(enemy_mem.attack_count_range / 8.0, 1.0)
+            #network_inputs[15] = min(enemy_mem.attack_count_melee / 8.0, 1.0)
 
             #movement speed and attack range comparisons:
             #TODO: use REAL movement speeds! (ZERGLING)
@@ -502,38 +511,44 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             network_inputs[21] = max(1.0 - dist_to_enemy / 8.0 , 0.0)
 
             #Is the unit lower or higher than us?
-            network_inputs[21] = np.clip(unit.position3d.z - enemy.position3d.z, -1.0, 1.0)
+            network_inputs[22] = np.clip(unit.position3d.z - enemy.position3d.z, -0.5, 0.5)
 
             #energy
-            network_inputs[22] = enemy.energy / 200.0
+            network_inputs[23] = enemy.energy / 200.0
 
             #cloaked?
-            network_inputs[23] = 1.0 if enemy.is_cloaked or enemy.is_burrowed else 0.0
+            network_inputs[24] = 1.0 if enemy.is_cloaked or enemy.is_burrowed else 0.0
 
             #some other tags
             network_inputs[25] = 1.0 if enemy.is_ready else 0.0
             network_inputs[26] = 1.0 if enemy.is_detector else 0.0
-            network_inputs[24] = 1.0 if enemy.cargo_max > 0 else 0.0
-            network_inputs[25] = 1.0 if enemy.is_flying else 0.0
-            network_inputs[26] = 1.0 if enemy_mem.is_melee else 0.0
+            network_inputs[27] = 1.0 if enemy.cargo_max > 0 else 0.0
+            network_inputs[28] = 1.0 if enemy.is_flying else 0.0
+            network_inputs[29] = 1.0 if enemy_mem.is_melee else 0.0
 
             # ??
             #network_inputs[27] = min(1.0, enemy.buff_duration_remain / 22.0)
 
             #enemy sight range?
-            network_inputs[28] = 0.0 # unsure about this?
+            network_inputs[30] = 0.0 # unsure about this?
 
             #Banelings is a special case against light units
-            network_inputs[29] = 0.5 if enemy_mem.type_id is UnitTypeId.BANELING and unit.is_light and not unit.is_flying else 0.0
+            network_inputs[31] = 0.5 if enemy_mem.type_id is UnitTypeId.BANELING and unit.is_light and not unit.is_flying else 0.0
 
             #A ratio of the units dps / units_ehp
-            network_inputs[30] = enemy_mem.glass_cannon_ratio
+            network_inputs[32] = enemy_mem.glass_cannon_ratio
 
             #was attack target last time? (this helps to stabilize the system a bit, like hysteresis)
-            network_inputs[31] = 0.5 if enemy.tag == mem.last_attack_target else 0.0
+            network_inputs[33] = 0.5 if enemy.tag == mem.last_attack_target else 0.0
+
+            
 
             # Dist from enemy centre? (should scale by max, ie identify units that are on the edges)
-            network_inputs[32] = min(1.0, mem.enemy_centre.distance_to(enemy)**2 / mem.enemy_in_range_count / 5.0)
+            #network_inputs[34] = min(1.0, mem.enemy_centre.distance_to(enemy)**2 / mem.enemy_in_range_count / 5.0)
+
+            network_inputs[35]  = min(0.5, enemy_mem.surround_length / (2*math.pi*enemy.radius))
+
+            network_inputs[36] = 1.0 if dist_to_enemy < mem.closest_enemy_dist + 0.35 else 0.0
 
             #TODO: aoe units?
 
@@ -557,7 +572,6 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             #TODO: bonus damage!!! very important actually!
 
 
-
             # TODO: scale this differently based on various other factors THIS IS WAY TOO SIMPLE AND STUPID!!
             # TODO: too many melee units trying to attack an enemy is not good, how to scale this?
 
@@ -565,8 +579,6 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             #TODO: enemy units busy warping in?
 
             #calculate results:
-            #TODO: split between melee/range/air networks!
-
             outputs = mem.attack_network.process(network_inputs)
             priority = outputs[0]
 
@@ -574,7 +586,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                 best_pri = priority
                 attack_target = enemy
                 attack_target_mem = enemy_mem
-                attack_target_in_range = (dist_to_enemy <= (attack_range + 1.0 + attack_range*0.2))
+                attack_target_in_range = (dist_to_enemy <= (attack_range + 1.0 + unit.movement_speed*0.2))
 
         # TODO: fix drones with specialization that they can defend correctly rather than just flee!
         # Drones should only be pulled in correct amounts
@@ -666,37 +678,35 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                 move_pri[(s - 2) % 8] += outputs[1]
 
 
-        # If attack target out of range transform into a move command
+        # If attack target out of range transform into a move command in said direction rather
         if best_pri >= 0.0 and not attack_target_in_range:
             s = determine_slice_nr(mem.position, attack_target.position)
-            move_pri[s] += min(1.0,0.25+best_pri*0.5)
+            move_pri[s] += 1.0
             best_pri = -1
             attack_target = None
 
-        #TODO: move priority decisions!
-        # The general idea is that if move_pri >= 1.0 then we move in that direction
-        # maybe also move if attack priority < 0.0 ?
-        # note: it might take a while for the genetic algorithm to spit out >= 1.0 priorities.. maybe not the best idea?
+        # Calculate move priority across the 8 directions:
         move_pri2 = np.zeros(8)
         for s in range(8):
-            move_pri2[s] = move_pri[s] + (move_pri[(s-1)%8] + move_pri[(s+1)%8])*0.6 + (move_pri[(s-2)%8] + move_pri[(s+2)%8])*0.2
+            move_pri2[s] = move_pri[s] + (move_pri[(s-1)%8] + move_pri[(s+1)%8])*0.6 + (move_pri[(s-2)%8] + move_pri[(s+2)%8])*0.1
 
         best_slice = move_pri2.argmax()
         move_pri = move_pri2[best_slice]
-        if not mem.is_melee and unit.weapon_cooldown > 0.2:
+
+        if not mem.is_melee and unit.weapon_cooldown >= 1.0:
             move_pri *= 1.5 #boost move priority for stutter stepping on range units
 
-        #move or attack?
         #TODO: flee!
 
-        if move_pri > 2.5 or best_pri < 0.0:
+        # decide if we should move the unit?
+        if best_pri < 0.0 or (not mem.is_melee and unit.weapon_cooldown and move_pri > 0.5) or (move_pri > 2.0):
             if self.debug:
                 self.draw_debug_line(unit, unit.position + slice_delta[best_slice], (50,255,50))
 
             self.do(unit.move(unit.position + slice_delta[best_slice]))
 
-
         elif attack_target:
+            #attack time!
             if self.debug:
                 self.draw_debug_line(unit, attack_target, (255, 50, 0))
 
@@ -705,11 +715,11 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             #update last_attack target for next round
             mem.last_attack_target = attack_target.tag
 
-            # update attack counts on the enemy (this greatly helps with focus fire adjustments)
-            if mem.is_melee:  # attacking_count_range
-                attack_target_mem.attack_count_melee += 1
-            else:
-                attack_target_mem.attack_count_range += 1
+            # update attack counts on the enemy (this helps with focus fire adjustments)
+            #if mem.is_melee:  # attacking_count_range
+            #    attack_target_mem.attack_count_melee += 1
+            #else:
+            #    attack_target_mem.attack_count_range += 1
 
             # TODO: if weapon_cooldown is zero and enemy is in range then add to enemy a counter of the amount of damage that will be done
             # TODO: THEN use this to prevent overkill damage!

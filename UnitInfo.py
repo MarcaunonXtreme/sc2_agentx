@@ -402,10 +402,10 @@ UNIT_INFO_LIST = {
 }
 
 
-def get_unit_info(agent : BaseAgentA1, type_id : UnitTypeId) -> UnitInfoBase:
+def get_unit_info(agent : BaseAgentA1, type_id : UnitTypeId, upgrade_list) -> UnitInfoBase:
     tmp = UNIT_INFO_LIST.get(type_id, None)
     if not tmp:
-        tmp = UnitInfoBase(agent, type_id)
+        tmp = UnitInfoBase(agent, type_id, upgrade_list)
         UNIT_INFO_LIST[type_id] = tmp
     return tmp
 

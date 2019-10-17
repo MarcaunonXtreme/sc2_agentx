@@ -1,0 +1,110 @@
+
+=Inputs for attack network=
+
+Currenlty have 42 vector of inputs.
+With a single output - attack priority.
+
+
+The following enemies are not considered for attack targetting:
+> missing (only in our memory)
+> hallucinations
+> snapshot
+> blip
+> invisible
+> enemies we can't attack
+> enemies more than 15 away
+> if enemy distance > 1.0 + attack_range + 4*max_movement_speed (scale this?)
+
+First is a couple of general inputs that is same for all enemy units related to the friendly unit
+
+0 - unit_hp percentage (shields included)
+1 - is cloaked or is burrowed 
+2 - current speed (based on delta movement since last tick)
+3 - if zerg: if on creep? 
+4 - unit_energy percentage (200 energy is considered 100% energy)
+
+
+The rest of these values are calculated for each enemy considered for attack targeting
+
+7 - enemy_hp percentage (shields included)
+8 - is enemy in attack range [means we can shoot this without moving]
+9 - 1.0 if attack range and then scaled based on distance / movement_speed  [helps picks targets that require less movement]
+10 - 1.0 if in enemy attack range else scale base on distace / enemy_movement_speed [helps pick enemies that are most likely to hurt us]
+11 - higher value = more of our units can target this unit [helps with focus fire]
+12 - higher value = more of our range units targetted this previously [helps stabalize and helps focus fire]
+13 - higher value = more of our melee units targetted this previously [helps stabalize and helps focus fire]
+
+14 - 
+15 -
+
+16 - movement_speed - enemy_movement_speed 
+17 - attack_range - enemy_attack_range 
+
+18 -
+19 -
+
+20 - unit.radius - enemy.radius  [radius ratios helps with melee surround mechanics]
+
+21 - 1.0 if unit next to us, then scales down. [This helps to target units closer to us first]
+22 - our height - enemy height [in some situations it helps to target units on high/low ground first]
+
+23 - enemy energy percentage [Killing enemies with high energy is probably a good idea]
+
+24 - is enemy cloaked or burrowed 
+25 - is enemy ready
+26 - is enemy a detector 
+27 - is enemy a transport
+28 - is enemy flying
+29 - is enemy melee
+
+30 -
+
+31 - 0.5 if enemy is baneling and we are non-flying light unit [helps focus fire banelings hopefully]
+
+32 - enemy glass cannon ratio = max dps air/ground / ((max_shield+max_hp)*(1.0+0.1*armor)) [This helps to take out enemy glass cannons first to reduce incoming dps effectively]
+33 - 0.5 if this was our previous target [helps stabalize]
+
+34 - 
+
+25 - sum(diameter of each unit surrounding this unit) / circumpherence of this enemy unit  [This helps agent to understand when enemy is fully surrounded already]
+    Note: currently only considering friendly units - need to consider enemy units surrounding this unit also but that is much more complex!
+
+36 - 1.0 if enemy is one of the "closest" enemies [helps focus fire/attack closest enemies first greatly!]
+
+
+
+
+A lot more to come, 42 won't be enough!
+
+
+
+= notes =
+
+friendly mem:
+> enemy in range count - number of enemies in range to attack
+> can attack count - not used?
+> friend_in_range_count - number of friendly units within a 10.0 radius - usefull ?
+> closest_enemy_dist - distance to closest enemy
+> enemy centre
+
+enemy mem:
+> attacking_previous_melee - how many of our melee units targetted this previously
+> attacking_previous_range - how many of our range units targetted this previously
+> can attack count - how many of our units can range/attack this enemy currently - more for ranged units
+> melee_in_range - number of (any) units that is in melee range of this unit - essentially surrounding it - currently only friendly units :(
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
