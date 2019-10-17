@@ -52,7 +52,7 @@ class BotInTraining(MicroAgentC2, TrainableAgent):
                     killme.append(u.tag)
 
             if killme:
-                print(f"Killing {len(killme)} units")
+                #print(f"Killing {len(killme)} units")
                 await self.client.debug_kill_unit(killme)
 
             #Check if scenario ended?

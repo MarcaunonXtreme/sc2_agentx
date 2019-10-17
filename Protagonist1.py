@@ -36,7 +36,7 @@ class Protagonist(BaseAgentA1, TrainableAgent):
         self.enemy_location_0 = self.game_info.map_center
         await super(Protagonist,self).on_start()
 
-        await self.client.debug_show_map()
+        #await self.client.debug_show_map()
 
         # if self.player_id == 1:
         #     distance_from = Flood.calculate_distance_from_unpathable(self.game_info.pathing_grid)
@@ -119,6 +119,8 @@ class Protagonist(BaseAgentA1, TrainableAgent):
             #Fallback, attack towards closest enemy for now
             #This is just a simple method, can improve a lot obviously
             #Attack towards closest enemy unit.
+            #TODO: prioritize units close to friendly units
+            #TODO: if defending this need to be completely different?
             e = self.enemy_units.closest_to(u)
             if e:
                 self.do(u.attack(e.position))

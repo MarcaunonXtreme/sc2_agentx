@@ -28,7 +28,7 @@ import Flood
 from Protagonist1 import Protagonist
 from BotInTraining import BotInTraining
 
-global_debug = True
+global_debug = False
 
 ###Scenario control:
 ## Ultimately we want to play every scenario at least 6 times (for genetic algorithms)
@@ -311,7 +311,7 @@ class TrainingMaster:
 
 
             if first:
-                first = False
+
                 f = open("train_report.txt", "a+")
                 f.write("== End of Map ==\r\n")
                 f.write(f"SCORES: {scores}\r\n")
@@ -328,6 +328,7 @@ class TrainingMaster:
 
             kill = []
 
+            stars_given = []
             b : AgentBrain
             for i,b in enumerate(self.brains):
                 score = b.get_score(race, network_name)
@@ -341,9 +342,13 @@ class TrainingMaster:
                 elif score <= bottom60:
                     stars = -1
 
+                stars_given.append(stars)
                 s = b.give_stars(race, network_name, stars)
                 if s <= -6:
                     kill.append(b)
+            if first:
+                first = False
+                f.write(f"Stars given: {stars_given}\r\n")
 
             stars = [b.get_stars(race, network_name) for b in self.brains]
             f.write(f"Stars {network_name}: {stars}\r\n")
@@ -392,7 +397,7 @@ class TrainingMaster:
             agent.setup_stage = 0
             m, v = agent.calculate_wealth()
             wealth = m + v * 1.5
-            print(f"Player {agent.player_id} end wealth = {wealth}")
+            #print(f"Player {agent.player_id} end wealth = {wealth}")
             lost_wealth.append(abs(wealth - agent.start_wealth))
 
         #TODO: adjust also based on time taken
@@ -493,6 +498,13 @@ class TrainingMaster:
                 pos = Point2((x,y))
 
                 if self.dist_from_walls[y,x] >= 4 and agent.in_pathing_grid(pos):
+
+                    if pos.distance_to(self.players[0].start_location) < 32.0:
+                        continue
+                    if pos.distance_to(self.players[1].start_location) < 32.0:
+                        continue
+                    #TODO: also not close to naturals!
+
                     #TODO: must check to be far enough from walls?
                     pos_good = True
 
@@ -709,7 +721,7 @@ class TrainingMaster:
             m, v = agent.calculate_wealth()
             agent.start_wealth = m + v*1.5
             self.end_time = agent.time + 60.0 # 60 seconds is more than enough time
-            print(f"player {agent.player_id} scenario start wealth = {agent.start_wealth}")
+            #print(f"player {agent.player_id} scenario start wealth = {agent.start_wealth}")
 
             #Maybe give units commands
             if agent.player_id == 1:
