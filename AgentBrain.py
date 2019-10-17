@@ -33,12 +33,12 @@ class Network:
         tmp = inputs_values
         #first dense layer:
         tmp = np.matmul(tmp, self.w0)
-        tmp = np.add(tmp, self.b0)
+        tmp = np.add(tmp, self.b0, out=tmp)
         #relu activator:
-        tmp = np.maximum(tmp,0)
+        tmp = np.clip(tmp,0, 10.0, out=tmp) #TODO: tweak this number lower maybe?
         #second dense layer:
         tmp = np.matmul(tmp, self.w1)
-        tmp = np.add(tmp,self.b1)
+        tmp = np.add(tmp,self.b1, out=tmp)
         #Linear output
         assert tmp.ndim == 1
         assert len(tmp) == self.outputs

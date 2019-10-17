@@ -648,7 +648,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             inputs[6] = 1.0 if mem_radar[6] else 0.0 # enemy has us ranged!
 
             #TODO: use real movement_speed, AND scape this 0.2 correctly!
-            inputs[7] = 1.0 if mem_radar[7] > unit.movement_speed * 0.2 else 0.0
+            inputs[7] = 2.0 if mem_radar[7] > unit.movement_speed * 0.2 else 0.0
             #inputs[7] = min(1.0, inputs[7] * 0.25) # how far we can move back and still keep "an" enemy in range
             #inputs[8] = min(1.0, inputs[8] * 0.25) # how far we need to move back to escape enemy range
 
