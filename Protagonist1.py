@@ -8,6 +8,8 @@ from sc2.position import Point2
 from sc2.unit import Unit
 from sc2.constants import UnitTypeId
 
+from Memory import UnitMemory, Memory
+
 import Flood
 import pickle
 
@@ -30,6 +32,8 @@ class Protagonist(BaseAgentA1, TrainableAgent):
         self.do_it2 = False
 
         self.global_debug = global_debug
+
+        self.enemy_memory : Memory = None 
 
     async def on_start(self):
         self.master.register_player(self)
@@ -119,9 +123,21 @@ class Protagonist(BaseAgentA1, TrainableAgent):
             #Fallback, attack towards closest enemy for now
             #This is just a simple method, can improve a lot obviously
             #Attack towards closest enemy unit.
-            #TODO: prioritize units close to friendly units
+            
             #TODO: if defending this need to be completely different?
-            e = self.enemy_units.closest_to(u)
+            e = self.game_info.map_center
+            if self.enemy_memory is not None:
+                
+                best_dist = 100.0
+                for mem in self.enemy_memory.values: #type: UnitMemory
+                    dist = mem.position.distance_to(u)
+                    if dist < best_dist:
+                        best_dist = dist
+                        e = mem.position
+
+            else:
+                if self.enemy_units:
+                    e = self.enemy_units.closest_to(u)
             if e:
                 self.do(u.attack(e.position))
 

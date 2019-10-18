@@ -105,6 +105,12 @@ class TrainingMaster:
             map_info = MapInfo(bot.game_info.map_name, bot)
             self.dist_from_walls = map_info.dist_from_wall
 
+        if self.player[0] and self.players[1]:
+            if isinstance(self.players[1], Protagonist):
+                if hasattr(self.players[0], friendly_memory):
+                    #Share the bot in training's units with the protagonist
+                    #This is cheating but it allows the protagonist to be smarter!
+                    self.players[1].enemy_memory = self.players[0].friendly_memory
 
     @property
     def setup_in_progress(self):

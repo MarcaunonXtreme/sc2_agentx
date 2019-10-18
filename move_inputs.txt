@@ -109,7 +109,7 @@ we start by copying the data from mem.radar[s] for the slice then fill in the re
 
 6 = 1.0 if at least one enemy has us in range
 
-7 = 1.0 if we can move back and still keep enemy in range (compares ranges with speed)
+7 = 2.0 if we can move back and still keep enemy in range (compares ranges with speed)
 
 
 
