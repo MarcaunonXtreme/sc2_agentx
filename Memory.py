@@ -15,6 +15,8 @@ from sc2.constants import IS_LIGHT, IS_ARMORED, IS_BIOLOGICAL, IS_MECHANICAL, IS
 
 from luts.attackUpgrades import *
 
+#TODO:
+#from UnitInfo import get_unit_info, UnitInfoBase
 
 #TODO: consider blips
 #TODO: consider snapshots
@@ -91,6 +93,9 @@ class UnitMemory:
             self.attacking_previous_range = 0
             self.attack_count_melee = 0
             self.attack_count_range = 0
+
+            self.closest_friendly_dist = 10.0
+            self.closest_friendly_tag = 0
             
         else:
             #for friendlies:
@@ -108,6 +113,8 @@ class UnitMemory:
         #both:
         self.surround_length = 0.0
         self.can_attack_count = 0
+        self.delta_power_projection = 0.0 #this is the micro short range one
+        self.delta_power_projection2 = 0.0  #this one is used for long distance decision making TODO
         #unit.attacking_count_melee = 0
         # unit.attacking_count_range = 0
         # unit.can_attack_count = 0
@@ -181,7 +188,7 @@ class UnitMemory:
         self.lost_shield = self.shield - unit.shield
         self.health = unit.health
         self.shield = unit.shield
-        self.armor = unit.armor + unit.armor_upgrade_level #TODO: upgrades!
+        self.armor = unit.armor + unit.armor_upgrade_level #TODO: other upgrades!
         self.shield_armor = unit.shield_upgrade_level
         self.weapon_upgrade = unit.attack_upgrade_level
         if unit.is_enemy:
