@@ -711,6 +711,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
 
         # If attack target out of range transform into a move command in said direction rather
+        #attack_target_slice = 0
         if best_pri >= 0.0:
             attack_target_slice = determine_slice_nr(mem.position, attack_target.position)
             if attack_target_in_range:
@@ -735,9 +736,9 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         best_slice = move_pri2.argmax()
         move_pri = move_pri2[best_slice]
 
-        if best_slice == attack_target_slice:
+        #if best_slice == attack_target_slice:
             #We moving in direction we want to attack...
-            pass
+        #    pass
 
         if not mem.is_melee and unit.weapon_cooldown >= 1.0:
             move_pri *= 1.5 #boost move priority for stutter stepping on range units
@@ -749,7 +750,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             if self.debug:
                 self.draw_debug_line(unit, unit.position + slice_delta[best_slice], (50,255,50))
 
-            if attack_target and best_slice == attack_target_slice:
+            if attack_target and best_pri >= 0.0 and attack_target_slice and best_slice == attack_target_slice:
                 #well, might as well move closer to what we want to attack (this avoids running past enemy units)
                 self.do(unit.move(attack_target.position))
             else:
