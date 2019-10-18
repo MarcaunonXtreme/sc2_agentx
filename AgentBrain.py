@@ -53,12 +53,20 @@ class Network:
 
     @staticmethod
     def _mutate_a(a , factor1, factor2):
+        #randomly adjust first:
         tmp = np.random.random(a.shape)
         tmp = tmp <= factor1
         delta = np.random.randn(*a.shape) * factor2
         delta = delta * tmp
         a += delta
-        np.clip(a, -10.0, 10.0, out=a) # Prevent weights from going 2 crazy!
+        #randomly reset a few:
+        tmp = np.random.random(a.shape)
+        tmp = tmp <= (factor1*0.05)
+        delta = np.random.randn(*a.shape) / 8.0
+        a = (a * (tmp == False)) + (delta * tmp)
+        # Prevent weights from going 2 crazy!
+        np.clip(a, -10.0, 10.0, out=a)
+        #TODO: really low chance to add another hidden node or remove one?
 
 
 

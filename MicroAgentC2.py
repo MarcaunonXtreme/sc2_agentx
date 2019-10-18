@@ -176,6 +176,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         for unit in self.units:
             if unit.type_id not in [UnitTypeId.BROODLING, UnitTypeId.LARVA, UnitTypeId.EGG, UnitTypeId.MULE]:
 
+
+
                 mem : UnitMemory = self.friendly_memory.see_unit(unit)
 
                 if not unit.is_active:
@@ -605,6 +607,12 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
             inputs[10] = np.clip(mem_radar[10]*0.01,-1.0,1.0) # short range delta power projection
 
+            if self.debug:
+                if inputs[10] >= 0.0:
+                    self.draw_debug_line(mem.position, mem.position + (slice_delta[s] * inputs[10]) , (50,250,50))
+                else:
+                    self.draw_debug_line(mem.position, mem.position + (slice_delta[s] * -inputs[10]), (250, 50, 50))
+
             if mem.friend_in_range_count > 0 and mem.enemy_in_range_count > 0:
                 E2 = mem.enemy_centre.distance_to(dest_position)
                 F2 = mem.friendly_centre.distance_to(dest_position)
@@ -618,7 +626,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
                 tmpb = (F-E) - (F2-E2)
                 if abs(tmpb) > 0.5:
-                    inputs[18] = np.sign(tmpb) #approach/restreat relative to battle line
+                    inputs[18] = np.sign(tmpb) #approach/retreat relative to battle line
                 
                 if F2-F > 0.66 and abs(tmpb) < 0.25:
                     inputs[19] = 1.0 #Flanking direction
@@ -700,8 +708,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
         # decide if we should move the unit?
         if best_pri < 0.0 or (not mem.is_melee and unit.weapon_cooldown and move_pri > 0.5) or (move_pri > 2.0):
-            if self.debug:
-                self.draw_debug_line(unit, unit.position + slice_delta[best_slice], (50,255,50))
+            #if self.debug:
+            #    self.draw_debug_line(unit, unit.position + slice_delta[best_slice], (50,255,50))
 
             if attack_target and best_pri >= 0.0 and attack_target_slice and best_slice == attack_target_slice:
                 #well, might as well move closer to what we want to attack (this avoids running past enemy units)
@@ -712,8 +720,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
         elif attack_target:
             #attack time!
-            if self.debug:
-                self.draw_debug_line(unit, attack_target, (255, 50, 0))
+            #if self.debug:
+            #    self.draw_debug_line(unit, attack_target, (255, 50, 0))
 
             self.do(unit.attack(attack_target))
 

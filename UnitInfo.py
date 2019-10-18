@@ -11,7 +11,23 @@ from sc2.game_data import UnitTypeData
 from sc2 import Race
 from sc2.constants import IS_STRUCTURE, IS_MECHANICAL, IS_BIOLOGICAL, IS_LIGHT, IS_ARMORED, IS_MASSIVE, IS_PSIONIC
 
+from sc2 import Optional, Union, List, Set
+from sc2.data import TargetType
+from sc2.cache import property_immutable_cache
+
 import numpy as np
+
+
+#Note: movement speed in AI is distance per second - if game is played at normal speed.
+# ie unit.movement_speed * 1.4 = speed on wiki
+# or speed on wiki / 1.4 = unit.movement_speed
+#
+# ie how far we move in 16 game ticks?
+
+TARGET_GROUND: Set[int] = {TargetType.Ground.value, TargetType.Any.value}
+TARGET_AIR: Set[int] = {TargetType.Air.value, TargetType.Any.value}
+TARGET_BOTH = TARGET_GROUND | TARGET_AIR
+
 
 # Base class for unit info tracking
 class UnitInfoBase:
@@ -102,12 +118,12 @@ class UnitInfoBase:
     def can_attack(self) -> bool:
         """ Checks if the unit can attack at all. """
         # TODO BATTLECRUISER doesnt have weapons in proto?!
-        return bool(self._weapons) or self.type_id in {UNIT_BATTLECRUISER, UNIT_ORACLE}
+        return bool(self._weapons) or self.type_id in {UnitTypeId.BATTLECRUISER, UnitTypeId.ORACLE}
 
     @property_immutable_cache
     def can_attack_both(self) -> bool:
         """ Checks if the unit can attack both ground and air units. """
-        if self.type_id == UNIT_BATTLECRUISER:
+        if self.type_id == UnitTypeId.BATTLECRUISER:
             return True
         if self._weapons:
             return any(weapon.type in TARGET_BOTH for weapon in self._weapons)
@@ -116,7 +132,7 @@ class UnitInfoBase:
     @property_immutable_cache
     def can_attack_ground(self) -> bool:
         """ Checks if the unit can attack ground units. """
-        if self.type_id in {UNIT_BATTLECRUISER, UNIT_ORACLE}:
+        if self.type_id in {UnitTypeId.BATTLECRUISER, UnitTypeId.ORACLE}:
             return True
         if self._weapons:
             return any(weapon.type in TARGET_GROUND for weapon in self._weapons)
@@ -126,9 +142,9 @@ class UnitInfoBase:
     @property_immutable_cache
     def _ground_range(self) -> Union[int, float]:
         """ Returns the range against ground units. Does not include upgrades. """
-        if self.type_id == UNIT_ORACLE:
+        if self.type_id == UnitTypeId.ORACLE:
             return 4
-        if self.type_id == UNIT_BATTLECRUISER:
+        if self.type_id == UnitTypeId.BATTLECRUISER:
             return 6
         if self.can_attack_ground:
             weapon = next((weapon for weapon in self._weapons if weapon.type in TARGET_GROUND), None)
@@ -167,7 +183,7 @@ class UnitInfoBase:
     @property_immutable_cache
     def can_attack_air(self) -> bool:
         """ Checks if the unit can air attack at all. Does not include upgrades. """
-        if self.type_id == UNIT_BATTLECRUISER:
+        if self.type_id == UnitTypeId.BATTLECRUISER:
             return True
         if self._weapons:
             return any(weapon.type in TARGET_AIR for weapon in self._weapons)
@@ -176,7 +192,7 @@ class UnitInfoBase:
     @property_immutable_cache
     def _air_range(self) -> Union[int, float]:
         """ Returns the range against air units. Does not include upgrades. """
-        if self.type_id == UNIT_BATTLECRUISER:
+        if self.type_id == UnitTypeId.BATTLECRUISER:
             return 6
         if self.can_attack_air:
             weapon = next((weapon for weapon in self._weapons if weapon.type in TARGET_AIR), None)
