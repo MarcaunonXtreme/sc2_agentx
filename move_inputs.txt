@@ -111,16 +111,17 @@ we start by copying the data from mem.radar[s] for the slice then fill in the re
 
 7 = 2.0 if we can move back and still keep enemy in range (compares ranges with speed)
 
+11 = short range delta power projection in this direction
 
+12 = 1.0 if most friends in this slice
+13 = 1.0 if most enemies in this slice
 
 
 Based on E and F: (requires testing visually)
 
 16 = approach/retreat friendly centre of gravity [this is not to spread out or clump up]
 17 = 1.0 if this is away from enemy centre [this is the escape direction]
-18 = move forward/backwards relative to the battle line 
-19 = 1.0 if this is the flanking direction
-
+18 = 1.0 if this is towards enemy centre [the attack direction]
 
 
 a few general inputs:

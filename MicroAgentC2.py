@@ -380,6 +380,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
 
         #Calculate additional RADAR stuff: (relative to friendly units in area)
+        mem.friend_in_range_count = 0
         friend_centre = [0,0]
         for u2 in self.units:
             if mem.position._distance_squared(u2.position) < 100.0:
@@ -596,6 +597,9 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         E = mem.position.distance_to(mem.enemy_centre)
         F = mem.position.distance_to(mem.friendly_centre)
 
+        most_friends = np.argmax(mem.radar[:,2])
+        most_enemies = np.argmax(mem.radar[:,3])
+
         #Process slices for move prioritization:
         for s in range(8):
             dest_position : Point2 = mem.position + (slice_delta[s] * 0.5)
@@ -623,7 +627,11 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
             inputs[11] = np.clip(mem_radar[11]*0.01,-1.0,1.0) # short range delta power projection
 
+            inputs[12] = 1.0 if s == most_friends and mem_radar[2] else 0.0
+            inputs[13] = 1.0 if s == most_enemies and mem_radar[3] else 0.0
 
+            #if inputs[13] > 0:
+            #    self.draw_debug_line(mem.position, dest_position, (250, 250, 0))
 
             # if self.debug:
             #     if inputs[11] >= 0.0:
@@ -636,25 +644,31 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                 F2 = mem.friendly_centre.distance_to(dest_position)
 
                 #closer/further from our own centre?
-                if abs(F2-F) > 0.5:
-                    inputs[16] = np.sign(F2 - F) #approach/retreat friendly centre
+                if abs(F2-F) > 0.6:
+                    inputs[16] = np.sign(F - F2) #approach/retreat friendly centre
 
-                if E2-E > 0.5:
-                    inputs[17] = 1.0 #this is the escape direction, moving away from enemies
+                if E2-E > 0.6:
+                    inputs[17] = E2-E #this is the escape direction, moving away from enemies
+                if E-E2 > 0.6:
+                    inputs[18] = E-E2 #attack general direction
 
-                tmpb = (F-E) - (F2-E2)
-                if abs(tmpb) > 0.5:
-                    inputs[18] = np.sign(tmpb) #approach/retreat relative to battle line
-                
-                if F2-F > 0.66 and abs(tmpb) < 0.25:
-                    inputs[19] = 1.0 #Flanking direction
 
+                # tmpb = (F2-E2) - (F-E)
+                # if abs(tmpb) > 0.5:
+                #     inputs[18] = np.sign(tmpb) #approach/retreat relative to battle line
+                #
+                # if inputs[18] > 0:
+                #     self.draw_debug_line(mem.position, dest_position, (50, 250, 0))
+                # if inputs[18] < 0:
+                #     self.draw_debug_line(mem.position, dest_position, (250, 50, 0))
+                #
+                # if F2-F > 0.7 and abs(tmpb) < 0.2:
+                #     inputs[19] = 1.0 #Flanking direction
 
 
             #TODO: compare distance from battle line with range to help units align correctly before they engage?
             #TODO: some normalization of highest attack priority target found in this slice direction (from attack network calculation)
             #TODO: some threat prioritization system? ie how dangerous is this slice?
-            #TODO: Power projection stuff!!
             #TODO: are we currently moving in this direction
             #TODO: push mechanics of nearby units! (advanced)
             #TODO: AOE information
@@ -669,7 +683,6 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             #inputs[29] = 1.0 if unit.weapon_cooldown else 0.0
             #inputs[30] = mem.speed2 # current speed
 
-
             #friendly/enemies in slices next to this one (wider radar)
             # not sure what is best to use? maybe distance rather?
             inputs[34] = 1.0 if mem.radar[(s+1) % 8][2] else 0.0
@@ -678,10 +691,9 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             inputs[37] = 1.0 if mem.radar[(s-1) % 8][3] else 0.0
 
 
-
             # Find results from network:
             outputs = mem.move_network.process(inputs)
-            outputs[0] = np.clip(outputs[0],-1.5,1.5)
+            outputs[0] = np.clip(outputs[0],-1.8,1.8)
             move_pri[s] += outputs[0] # priority to move in this direction!
             move_pri[(s + 4) % 8] -= outputs[0] # priority to run away = opposite of this one obviously
             if outputs[1] > 0:
@@ -706,7 +718,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         # Calculate move priority across the 8 directions:
         move_pri2 = np.zeros(8)
         for s in range(8):
-            move_pri2[s] = move_pri[s] + (move_pri[(s-1)%8] + move_pri[(s+1)%8])*0.5 + (move_pri[(s-2)%8] + move_pri[(s+2)%8])*0.1
+            move_pri2[s] = move_pri[s] + (move_pri[(s-1)%8] + move_pri[(s+1)%8])*0.6 + (move_pri[(s-2)%8] + move_pri[(s+2)%8])*0.2
 
         #remove directions that are not pathable:
         if not unit.is_flying:
@@ -725,22 +737,22 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         #TODO: flee!
 
         # decide if we should move the unit?
-        if best_pri < 0.0 or (not mem.is_melee and unit.weapon_cooldown and move_pri > 0.5) or (move_pri > 1.5 and not mem.attack_mode) or (move_pri > 3.0):
+        if best_pri < 0.0 or (not mem.is_melee and unit.weapon_cooldown and move_pri > 0.25) or (move_pri > 2.0 and not mem.attack_mode): # or (move_pri > 2.4):
             # moving
-            if self.debug:
-                self.draw_debug_line(unit, unit.position + slice_delta[best_slice], (50,255,50))
+            #if self.debug:
+            #    self.draw_debug_line(unit, unit.position + slice_delta[best_slice], (50,255,50))
 
             if attack_target and best_pri >= 0.0 and attack_target_slice and best_slice == attack_target_slice:
                 #well, might as well move closer to what we want to attack (this avoids running past enemy units)
-                self.do(unit.move(attack_target.position))
+                self.do(unit.move(attack_target))
             else:
                 #move in this general slice direction
                 self.do(unit.move(unit.position + slice_delta[best_slice]))
 
         elif attack_target:
             #attack time!
-            if self.debug:
-                self.draw_debug_line(unit, attack_target, (255, 50, 0))
+            #if self.debug:
+            #    self.draw_debug_line(unit, attack_target, (255, 50, 0))
 
             self.do(unit.attack(attack_target))
 

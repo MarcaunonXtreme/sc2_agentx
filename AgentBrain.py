@@ -66,9 +66,10 @@ class Network:
         delta = np.random.randn(*a.shape) * factor2
         delta = delta * tmp
         a += delta
+
         #randomly reset a few:
         tmp = np.random.random(a.shape)
-        tmp = tmp <= (factor1*0.05)
+        tmp = tmp <= (factor1*0.1)
         delta = np.random.randn(*a.shape) / 8.0
         a = (a * (tmp == False)) + (delta * tmp)
         # Prevent weights from going 2 crazy!

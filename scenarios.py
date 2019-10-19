@@ -342,9 +342,9 @@ SCENARIOS2 =[
          ),
     Scenario(SCENARIO_TYPE_OPEN,
          p1=RaceTuple(
-             zerg=[ScUnits(UnitTypeId.ZERGLING, 8, 16)],  # Zerg
+             zerg=[ScUnits(UnitTypeId.ZERGLING, 8, 16)],
              terran=None,
-             protoss=[ScUnits(UnitTypeId.ZEALOT, 2, 4)]), # Protoss
+             protoss=[ScUnits(UnitTypeId.ZEALOT, 2, 4)]),
          p2=RaceTuple(
              zerg=[ScUnits(UnitTypeId.ZERGLING, 8, 15), ScUnits(UnitTypeId.ROACH, 0, 2)],
              terran=[ScUnits(UnitTypeId.MARINE, 4, 7), ScUnits(UnitTypeId.MARAUDER,0, 2)],
@@ -352,8 +352,24 @@ SCENARIOS2 =[
          ),
          networks=RaceTuple(
              zerg=["melee_move", "melee_attack"],
-             terran=["range_move", "range_attack"],
+             terran=[],
              protoss=["melee_move", "melee_attack"]),
+         level=1
+         ),
+    Scenario(SCENARIO_TYPE_OPEN,
+         p1=RaceTuple(
+             zerg=[ScUnits(UnitTypeId.ROACH, 8, 16)],
+             terran=[ScUnits(UnitTypeId.MARINE, 7, 14), ScUnits(UnitTypeId.MARAUDER, 2, 4)],
+             protoss=[ScUnits(UnitTypeId.STALKER, 8, 16)]),
+         p2=RaceTuple(
+             zerg=[ScUnits(UnitTypeId.ZERGLING, 6, 12), ScUnits(UnitTypeId.ROACH, 8, 16)],
+             terran=[ScUnits(UnitTypeId.MARINE, 4, 8), ScUnits(UnitTypeId.MARAUDER, 3, 6)],
+             protoss=[ScUnits(UnitTypeId.ZEALOT, 2, 4), ScUnits(UnitTypeId.STALKER, 4, 10)]
+         ),
+         networks=RaceTuple(
+             zerg=["range_move", "range_attack"],
+             terran=["range_move", "range_attack"],
+             protoss=["range_move", "range_attack"]),
          level=1
          ),
 ]
