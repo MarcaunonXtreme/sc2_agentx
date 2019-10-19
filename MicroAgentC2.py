@@ -248,16 +248,17 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                             
 
                             # see if enemy is facing us?
-                            angle = math.atan2(unit.position.y - enemy.position.y, unit.position.x - enemy.position.x) - enemy.facing
-                            angle = min(math.fabs(angle), math.fabs(angle - math.pi*2))
-                            if angle < 0.030: #Not sure how find to make this
-                                if enemy.is_melee:
-                                    #TODO: scale this by some kind of threat calculation?
-                                    if dist_to_enemy < enemy_attack_range + 0.6:
-                                        mem.radar[s,4] += 1
-                                else:
-                                    if dist_to_enemy < enemy_attack_range + 0.2:
-                                        mem.radar[s,5] += 1
+                            if dist_to_enemy < enemy_attack_range + 0.5:
+                                angle = math.atan2(unit.position.y - enemy.position.y, unit.position.x - enemy.position.x) - enemy.facing
+                                angle = min(math.fabs(angle), math.fabs(angle - math.pi*2))
+                                if angle < 0.030: #Not sure how find to make this
+                                    if enemy.is_melee:
+                                        #TODO: scale this by some kind of threat calculation?
+                                        if dist_to_enemy < enemy_attack_range + 0.5:
+                                            mem.radar[s,4] += 1
+                                    else:
+                                        if dist_to_enemy < enemy_attack_range + 0.2:
+                                            mem.radar[s,5] += 1
 
                             #we in enemy range in general?
                             if dist_to_enemy < enemy_attack_range + 0.1:
@@ -269,10 +270,10 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                             mem.radar[s,8] = 0
 
                             #TODO: calculate power projections against memory only units also?
-                            #TODO: update this to use all correct calculations to determine dps numbers! Armour isn't even considered! or bonus damage!
-                            #TODO: add counter information into this also!
+                            #TODO: still need to use real: attack speeds, attack ranges
+                            #TODO: still need to consider unitThreats.py information
                             #TODO: improve this more in other ways
-                            #TODO: visually test that this works somehow!
+                            #TODO: visually test that this works somehow?
                             #Short range power projection: (only versus visible units? for now?)
                             power_ratio = np.clip(1.0 - max(0,dist_to_enemy - (attack_range+mem.movement_speed*2))/(mem.movement_speed*2) , 0.0, 1.0)
                             power = (25+mem.health+mem.shield) * (1 + attack_dps + unit.energy*0.1)
@@ -283,10 +284,6 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                             mem.power_projection += enemy_power * enemy_power_ratio # power projected against this unit
                             mem.radar[s, 10] += enemy_power * enemy_power_ratio # power projected against from this angle
                             enemy.power_projection += power * power_ratio
-
-                            #delta_power = power*power_ratio - enemy_power*enemy_power_ratio
-                            #mem.radar[s,10] += delta_power
-                            #mem.delta_power_projection += delta_power
 
 
                 if mem.enemy_in_range_count:

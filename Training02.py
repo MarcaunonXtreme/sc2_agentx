@@ -28,7 +28,7 @@ import Flood
 from Protagonist1 import Protagonist
 from BotInTraining import BotInTraining
 
-global_debug = True
+global_debug = False
 
 ###Scenario control:
 ## Ultimately we want to play every scenario at least 6 times (for genetic algorithms)
@@ -67,7 +67,7 @@ class TrainingData:
 
 
 class TrainingMaster:
-    def __init__(self, nr_brains = 24):
+    def __init__(self, nr_brains = 16):
         self.players = [None, None]
         self.players_data = [None, None]
 
@@ -87,6 +87,9 @@ class TrainingMaster:
         self.scenario : Scenario = None
 
         self.dist_from_walls : np.ndarray = None
+
+        self.base_upgrade_level = random.randint(0, 2)
+
 
     def register_player(self, bot : (TrainableAgent, sc2.BotAI)):
         bot.training_data = TrainingData(bot)
@@ -249,7 +252,7 @@ class TrainingMaster:
             raise NotImplementedError
 
         #Upgrade levels:
-        upgrade_level = random.randint(0,3)
+        upgrade_level = self.base_upgrade_level + random.randint(0,1)
         print(f"Upgrade Level for agent = {upgrade_level}")
         for i in range(upgrade_level):
             await agent.client.debug_upgrade()
@@ -319,7 +322,7 @@ class TrainingMaster:
             if first:
 
                 f = open("train_report.txt", "a+")
-                f.write("== End of Map ==\r\n")
+                f.write("== End of Scenario ==\r\n")
                 f.write(f"SCORES: {scores}\r\n")
 
             scores.sort(reverse=True)
@@ -331,6 +334,7 @@ class TrainingMaster:
             if first:
                 f.write(f"top 10% score = {top10}\r\n")
                 f.write(f"top 20% score = {top20}\r\n")
+                f.write(f"bottom 30 score score = {bottom30}\r\n")
 
             kill = []
 
@@ -358,6 +362,8 @@ class TrainingMaster:
 
             stars = [b.get_stars(race, network_name) for b in self.brains]
             f.write(f"Stars {network_name}: {stars}\r\n")
+            gen = [b.get_generation(race, network_name) for b in self.brains]
+            f.write(f"Generations {network_name}: {gen}\r\n")
 
             best_networks = [b for b in self.brains if b.get_stars(race, network_name) >= 2]
             if len(best_networks) == 0:
@@ -571,6 +577,9 @@ class TrainingMaster:
 
     def setup_scenario_units(self):
 
+        f = open("train_report.txt", "a+")
+        f.write("== New Scenario ==\r\n")
+
         print("=Setting up units for new scenario=")
 
         good_sc = False
@@ -589,6 +598,7 @@ class TrainingMaster:
 
         for p in range(2):
             print(f"Player {p}: ",end="")
+            f.write(f"Player {p}: ")
 
             unit_list : list = pp[p]
             assert isinstance(unit_list, list) and len(unit_list) > 0
@@ -603,9 +613,12 @@ class TrainingMaster:
                 tmp.amount = random.randint(units.min,units.max)
                 if tmp.amount:
                     print(f"{tmp.type_id}={tmp.amount}, ",end="")
+                    f.write(f"{tmp.type_id}={tmp.amount}, ")
                     data.units.append(tmp)
 
             print("")
+            f.write("\r\n")
+        f.close()
 
     async def create_scenario_units(self, agent, data):
         pos: Point2 = data.position.rounded

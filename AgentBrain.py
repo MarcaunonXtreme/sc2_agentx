@@ -131,6 +131,13 @@ class AgentBrain:
         else:
             return -2
 
+    def get_generation(self, race, network_name):
+        nets = self.networks[race]
+        if network_name in nets:
+            return nets[network_name].generation
+        else:
+            return -1
+
     def get_average_stars(self, race):
         nets = self.networks[race]
         s = [n.stars for n in nets]
