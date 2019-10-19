@@ -53,6 +53,13 @@ class Network:
 
     @staticmethod
     def _mutate_a(a , factor1, factor2):
+        if np.random.random() < 0.1:
+            #10% chance to mutate 4 times as many values in this gene
+            factor1 *= 4
+        if np.random.random() < 0.1:
+            #10% chance for mutations to be 3 times larger and more drastic
+            factor2 *= 3
+
         #randomly adjust first:
         tmp = np.random.random(a.shape)
         tmp = tmp <= factor1

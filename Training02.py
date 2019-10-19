@@ -67,7 +67,7 @@ class TrainingData:
 
 
 class TrainingMaster:
-    def __init__(self, nr_brains = 16):
+    def __init__(self, nr_brains = 20):
         self.players = [None, None]
         self.players_data = [None, None]
 
@@ -330,6 +330,7 @@ class TrainingMaster:
             top20 = scores[round(len(scores) * 0.22)]
             bottom60 = scores[round(len(scores) * 0.39)]
             bottom30 = scores[round(len(scores) * 0.69)]
+            bottom10 = scores[round(len(scores) * 0.91)]
 
             if first:
                 f.write(f"top 10% score = {top10}\r\n")
@@ -347,14 +348,16 @@ class TrainingMaster:
                     stars = 2
                 elif score >= top20:
                     stars = 1
+                elif score <= bottom10:
+                    stars = -6 # fuck it completely
                 elif score <= bottom30:
-                    stars = -2
+                    stars = -4
                 elif score <= bottom60:
-                    stars = -1
+                    stars = -2
 
                 stars_given.append(stars)
                 s = b.give_stars(race, network_name, stars)
-                if s <= -6:
+                if s <= -8:
                     kill.append(b)
             if first:
                 first = False
@@ -365,7 +368,11 @@ class TrainingMaster:
             gen = [b.get_generation(race, network_name) for b in self.brains]
             f.write(f"Generations {network_name}: {gen}\r\n")
 
-            best_networks = [b for b in self.brains if b.get_stars(race, network_name) >= 2]
+            best_networks = [b for b in self.brains if b.get_stars(race, network_name) >= 3]
+            if len(best_networks) == 0:
+                best_networks = [b for b in self.brains if b.get_stars(race, network_name) >= 2]
+            if len(best_networks) == 0:
+                best_networks = [b for b in self.brains if b.get_stars(race, network_name) >= 1]
             if len(best_networks) == 0:
                 best_networks = [b for b in self.brains if b.get_stars(race, network_name) >= 0]
             assert len(best_networks) > 0
@@ -373,11 +380,16 @@ class TrainingMaster:
             for b in kill:
                 kill_count += 1
 
-                b.copy_and_mutate_from(race, network_name, random.choice(best_networks) )
+                if np.random.random() >= 0.05:
+                    b.copy_and_mutate_from(race, network_name, random.choice(best_networks) )
+                else:
+                    # 5% chance to simply delete it and let a new random network be spawned in it's place (fresh blood)
+                    b.delete_network(race,network_name)
 
 
 
         f.write(f"Killed {kill_count} networks\r\n")
+        f.flush()
         f.close()
 
         #reset when done
@@ -427,6 +439,10 @@ class TrainingMaster:
                 p1_score -= round(bonus_time)
 
         p1_score += lost_wealth[1] * 0.1 # 10% of enemy losses are directly added as score - then encourage engagement rather than running away
+
+        if lost_wealth[1] <= 0:
+            # We did absolutely nothing to the enemy
+            p1_score -= 100
 
         print(f"Player 1 score = {p1_score}")
         #print(f"Player 2 score = {p2_score}")
@@ -485,7 +501,7 @@ class TrainingMaster:
 
             if self.scenario_count >= 5:
                 print("=== DONE WITH THIS MAP ===")
-                p: sc2.BotAI = self.players[0]
+                #p: sc2.BotAI = self.players[0]
                 raise EndMapError()
                 #await p.client.debug_leave()
 

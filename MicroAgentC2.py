@@ -528,10 +528,6 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
             #TODO: temporary units?
 
-            #TODO: actual damage?
-            # TODO: scale by enemy armour
-
-
 
             #TODO: enemy static priority?
             # TODO: enemy static priority
@@ -539,15 +535,11 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             #TODO: prevent overkill?
             #TODO: applied damage to prevent overkill
 
-
             #TODO: for melee units getting blocked can be bad, so consider actual distances,blocks? (move?)
             #USE in batches: self.client.query_pathings()
 
-            #TODO: bonus damage!!! very important actually!
 
-
-            # TODO: scale this differently based on various other factors THIS IS WAY TOO SIMPLE AND STUPID!!
-            # TODO: too many melee units trying to attack an enemy is not good, how to scale this?
+            #TODO: scale this differently based on various other factors THIS IS WAY TOO SIMPLE AND STUPID!!
 
             #TODO: scale for enemy units that is about to expire
             #TODO: enemy units busy warping in?

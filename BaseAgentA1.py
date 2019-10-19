@@ -853,7 +853,7 @@ class BaseAgentA1(sc2.BotAI):
                 index += 1
 
 
-    def calculate_wealth(self, ignore_structs = False, worker_factor = 1.0):
+    def calculate_wealth(self, ignore_structs = False, worker_factor = 1.0, unit_factor = 1.0):
         m = 0
         v = 0
         for unit in self.units + self.structures:  # type: Unit
@@ -887,6 +887,9 @@ class BaseAgentA1(sc2.BotAI):
             if item_id in [UnitTypeId.PROBE, UnitTypeId.SCV, UnitTypeId.DRONE]:
                 m += type_data.cost.minerals * worker_factor
                 v += type_data.cost.vespene * worker_factor
+            elif IS_STRUCTURE not in [unit_data.attributes]:
+                m += type_data.cost.minerals * unit_factor
+                v += type_data.cost.vespene * unit_factor
             else:
                 m += type_data.cost.minerals
                 v += type_data.cost.vespene
