@@ -30,7 +30,7 @@ class UnitMemory:
         self.info = info
         self.unit = unit
         self.tag = unit.tag
-        self.type_id = UNIT_UNIT_ALIAS.get(unit.type_id, unit.type_id)
+        self.type_id = info.type_id
         self.current_type_id = 0
         self.position : Point2 = unit.position
 
@@ -250,10 +250,11 @@ class Memory:
 
         memory = self.units.get(unit.tag, None)
         if not memory:
-            i = self.info.get(unit.type_id, None)
+            ti = UNIT_UNIT_ALIAS.get(unit.type_id, unit.type_id)
+            i = self.info.get(ti, None)
             if not i:
-                i = get_unit_info(unit.type_id)(self.agent, unit.type_id, self.upgrades)
-                self.info[unit.type_id] = i
+                i = get_unit_info(ti)(self.agent, ti, self.upgrades)
+                self.info[ti] = i
 
             memory = UnitMemory(unit, i)
             self.units[unit.tag] = memory

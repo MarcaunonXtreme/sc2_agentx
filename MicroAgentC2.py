@@ -240,7 +240,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
                             # Update can_attack_count - useful for managing attack priorities
                             # Note: simplified:
-                            #ratio = 1.0 / max(1.0, 1.0 + (dist_to_enemy - attack_range) * 5.0 / max(unit.movement_speed, 1.0))
+                            #ratio = 1.0 / max(1.0, 1.0 + (dist_to_enemy - attack_range) * 5.0 / max(mem.movement_speed, 1.0))
                             #enemy.can_attack_count += ratio
                             enemy.can_attack_count += 1.0 if dist_to_enemy < (attack_range + 0.25) else 0.0
                             
@@ -272,10 +272,10 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                             #TODO: improve this more in other ways
                             #TODO: visually test that this works somehow!
                             #Short range power projection: (only versus visible units? for now?)
-                            power_ratio = np.clip(1.0 - max(0,dist_to_enemy - (attack_range+unit.movement_speed*2))/(unit.movement_speed*2) , 0.0, 1.0)
+                            power_ratio = np.clip(1.0 - max(0,dist_to_enemy - (attack_range+mem.movement_speed*2))/(mem.movement_speed*2) , 0.0, 1.0)
                             power = (25+mem.health+mem.shield) * (1 + attack_dps + unit.energy*0.1)
 
-                            enemy_power_ratio = np.clip(1.0 - max(0,dist_to_enemy - (enemy_attack_range+enemy.unit.movement_speed*2))/(enemy.unit.movement_speed*2) , 0.0, 1.0)
+                            enemy_power_ratio = np.clip(1.0 - max(0,dist_to_enemy - (enemy_attack_range+enemy.movement_speed*2))/(enemy.movement_speed*2) , 0.0, 1.0)
                             enemy_power = (25+enemy.health+enemy.shield) * (1 + enemy_attack_dps + enemy.unit.energy*0.1)
 
                             mem.power_projection += enemy_power * enemy_power_ratio # power projected against this unit
@@ -438,7 +438,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                 continue #can't attack this enemy
             
             # If enemy to far for this unit currently then considering it for attacking is pointless at this time.
-            if dist_to_enemy > 1.0 + attack_range + 4*unit.movement_speed:
+            if dist_to_enemy > 1.0 + attack_range + 4*mem.movement_speed:
                 continue
 
 
@@ -449,9 +449,9 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             #enemy already in range
             network_inputs[8] = 1.0 if dist_to_enemy <= attack_range+0.1 else 0.0
             # 1.0 if enemy is in range, else scales down towards 0.0 based on this units speed
-            network_inputs[9] = 1.0 / max(1.0, 1.0 + (dist_to_enemy - attack_range)/max(0.1, unit.movement_speed) )
+            network_inputs[9] = 1.0 / max(1.0, 1.0 + (dist_to_enemy - attack_range)/max(0.1, mem.movement_speed) )
             # The reverse for the enemy
-            network_inputs[10] = 1.0 / max(1.0, 1.0 + (dist_to_enemy - enemy_attack_range)/max(0.1, enemy.movement_speed) )
+            network_inputs[10] = 1.0 / max(1.0, 1.0 + (dist_to_enemy - enemy_attack_range)/max(0.1, enemy_mem.movement_speed) )
 
             #How many of our units can attack this unit more or less?
             network_inputs[11] = min(enemy_mem.can_attack_count / 8.0, 1.0)
@@ -464,12 +464,12 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
             #movement speed and attack range comparisons:
             #TODO: use REAL movement speeds! (ZERGLING)
-            network_inputs[16] = np.clip((unit.movement_speed - enemy.movement_speed) / 5.0, -1.0, 1.0)
+            network_inputs[16] = np.clip((mem.movement_speed - enemy_mem.movement_speed) / 5.0, -1.0, 1.0)
             #TODO: use real attack range!
             network_inputs[17] = np.clip((attack_range - enemy_attack_range) / 5.0, -1.0, 1.0)
 
             #this is a ratio of how easily it is theoretically to escape enemy attack range
-            #network_inputs[18] = np.clip(1.0 - ((enemy_attack_range - dist_to_enemy) / max(0.1, unit.movement_speed)) , 0.0, 1.0)
+            #network_inputs[18] = np.clip(1.0 - ((enemy_attack_range - dist_to_enemy) / max(0.1, mem.movement_speed)) , 0.0, 1.0)
             #TODO: how easily for enemy to escape us?
 
             #ratio of radius:
@@ -556,7 +556,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                 best_pri = priority
                 attack_target = enemy
                 attack_target_mem = enemy_mem
-                attack_target_in_range = (dist_to_enemy <= (attack_range + 1.0 + unit.movement_speed*0.5))
+                attack_target_in_range = (dist_to_enemy <= (attack_range + 1.0 + mem.movement_speed*0.5))
 
 
             #some additional calculations for the slice:
@@ -621,8 +621,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
             inputs[6] = 1.0 if mem_radar[6] else 0.0 # enemy has us ranged!
 
-            #TODO: use real movement_speed, AND scape this 0.2 correctly!
-            inputs[7] = 2.0 if mem_radar[7] > unit.movement_speed * 0.2 else 0.0
+            inputs[7] = 2.0 if mem_radar[7] > mem.movement_speed * 0.2 else 0.0
             #inputs[7] = min(1.0, inputs[7] * 0.25) # how far we can move back and still keep "an" enemy in range
             #inputs[8] = min(1.0, inputs[8] * 0.25) # how far we need to move back to escape enemy range
 
