@@ -57,7 +57,7 @@ The rest of these values are calculated for each enemy considered for attack tar
 28 - is enemy flying
 29 - is enemy melee
 
-30 -
+
 
 31 - 0.5 if enemy is baneling and we are non-flying light unit [helps focus fire banelings hopefully]
 
@@ -73,6 +73,9 @@ The rest of these values are calculated for each enemy considered for attack tar
 
 37 - 1.0 if we are the closest friendly unit to this enemy. [This is usefull for some mechanics other than shooting also]
 
+
+40 - 1.0 if we do bonus damage against this target
+41 - 0.0 = no armour - 1.0 = 5+ armor (based on either shield or hp depending which is more)
 
 
 A lot more to come, 42 won't be enough!

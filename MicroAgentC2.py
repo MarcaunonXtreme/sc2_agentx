@@ -235,8 +235,10 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                             attack_range = unit.air_range if enemy.unit.is_flying else unit.ground_range
                             enemy_attack_range = enemy.unit.air_range if unit.is_flying else enemy.unit.ground_range
 
-                            attack_dps = unit.air_dps if enemy.unit.is_flying else unit.ground_dps
-                            enemy_attack_dps = enemy.unit.air_dps if unit.is_flying else enemy.unit.ground_dps
+                            #attack_dps = unit.air_dps if enemy.unit.is_flying else unit.ground_dps
+                            attack_dps = mem.get_dps_versus(enemy)
+                            #enemy_attack_dps = enemy.unit.air_dps if unit.is_flying else enemy.unit.ground_dps
+                            enemy_attack_dps = enemy.get_dps_versus(mem)
 
                             # Update can_attack_count - useful for managing attack priorities
                             # Note: simplified:
@@ -497,8 +499,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             # ??
             #network_inputs[27] = min(1.0, enemy.buff_duration_remain / 22.0)
 
-            #enemy sight range?
-            network_inputs[30] = 0.0 # unsure about this?
+
 
             #Banelings is a special case against light units
             network_inputs[31] = 0.5 if enemy_mem.type_id is UnitTypeId.BANELING and unit.is_light and not unit.is_flying else 0.0
@@ -519,6 +520,12 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             network_inputs[36] = 1.0 if dist_to_enemy < mem.closest_enemy_dist + 0.35 else 0.0
 
             network_inputs[37] = 1.0 if unit.tag == enemy_mem.closest_friendly_tag else 0.0
+
+            network_inputs[40] = 1.0 if mem.bonus_dmg_versus(enemy_mem) else 0.0
+            if enemy_mem.health > enemy_mem.shield:
+                network_inputs[41] = 0.2 * enemy_mem.armor
+            else:
+                network_inputs[41] = 0.2 * enemy_mem.shield_armor
 
             #TODO: aoe units?
 

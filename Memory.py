@@ -152,19 +152,15 @@ class UnitMemory:
         else:
             return False
 
-    #This function returns (damage_vs_hp , damage_vs_shield, dps, time_to_kill)
-    # damage_vs_hp is the number of hitpoint damage it will do versus enemy (if no shield left)
-    # damage_vs_shield is number of shield points damage it will do versus enemy (assuming it's a protoss unit with shield left)
-    # dps - average damage per second versus health/armour (doesn't consider shields)
-    # time_to_kill - an estimation of exactly how long it will take to kill the target (assuming it is in range etc.)
-    def get_dmg_versus(self, enemy ) :
+    #This function returns (dps estimation)
+    def get_dps_versus(self, enemy ) :
         #calculate damage output:
         damage = self.air_damage if enemy.is_flying else self.ground_damage # (damage,attacks,speed)
         if damage[0] <= 0:
             return 0 # can't attack this enemy at all
         factor = self.attack_upgrade_factor[1] if enemy.is_flying else self.attack_upgrade_factor[0]
 
-        # calcualte raw non-bonus damage:
+        # calculate raw non-bonus damage:
         raw_dmg = damage[0] + factor*self.weapon_upgrade
         
         if self.bonus_dmg: #add bonus damage if applicable
@@ -173,18 +169,30 @@ class UnitMemory:
 
         #Reduce by armor:
         #TODO: figure out how to consider shield vs armour here?
-        hp_dmg = (raw_dmg - enemy.armor) * damage[1] # TODO: upgrades! (like plating on ultra)
-        shield_dmg = (raw_dmg - enemy.shield_armor) * damage[1]
-        
+
         # Calculate damage per second: (doesn't consider shields here)
-        dps = hp_dmg / damage[2]  #TODO: upgrades
+        if enemy.health > enemy.shield:
+            hp_dmg = (raw_dmg - enemy.armor) * damage[1]  # TODO: upgrades! (like plating on ultra)
+            dps = hp_dmg / damage[2]  #TODO: upgrades
+        else:
+            shield_dmg = (raw_dmg - enemy.shield_armor) * damage[1]
+            dps = shield_dmg / damage[2]
 
         # Calculate how long it will take to kill the target:
         #Note: this is not perfect yet in the shield/hp edge?
-        hits = (enemy.shield+shield_dmg-1) // shield_dmg  + (enemy.health+hp_dmg-1 - (enemy.shield%shield_dmg)) // hp_dmg
-        kill_time = hits * damage[2] #TODO: upgrades
+        #hits = (enemy.shield+shield_dmg-1) // shield_dmg  + (enemy.health+hp_dmg-1 - (enemy.shield%shield_dmg)) // hp_dmg
+        #kill_time = hits * damage[2] #TODO: upgrades
 
-        return hp_dmg, shield_dmg, dps, kill_time 
+        return dps
+
+    def bonus_dmg_versus(self, enemy):
+        if self.bonus_dmg: #add bonus damage if applicable
+            if enemy.got_attribute(self.bonus_dmg[0]):
+                return True
+        return False
+
+
+    #def get_dmg_versus2(self, enemy):
 
 
 
