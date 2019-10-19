@@ -131,7 +131,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             mem.closest_friendly_dist = 10.0
             mem.closest_friendly_tag = 0
 
-            mem.delta_power_projection = 0.0
+            mem.power_projection = 0.0
             #unit.attacking_count_melee = 0
             #unit.attacking_count_range = 0
             #unit.can_attack_count = 0
@@ -154,7 +154,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             mem.closest_friendly_dist = 10.0
             mem.closest_friendly_tag = 0
 
-            mem.delta_power_projection = 0.0
+            mem.power_projection = 0.0
             #unit.attacking_count_melee = 0
             #unit.attacking_count_range = 0
             #unit.can_attack_count = 0
@@ -176,8 +176,6 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         for unit in self.units:
             if unit.type_id not in [UnitTypeId.BROODLING, UnitTypeId.LARVA, UnitTypeId.EGG, UnitTypeId.MULE]:
 
-
-
                 mem : UnitMemory = self.friendly_memory.see_unit(unit)
 
                 if not unit.is_active:
@@ -185,7 +183,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
                 mem.enemy_in_range_count = 0
                 mem.can_attack_count = 0
-                mem.delta_power_projection = 0.0
+                mem.power_projection = 0.0
+
 
                 mem.radar.fill(0)
                 for i in range(8):
@@ -193,8 +192,6 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                     mem.radar[i, 1] = 20.0 #for closest enemy unit
 
                 enemy_centre = [0, 0]
-
-
 
                 #Process all enemy units in local area
                 enemy : UnitMemory
@@ -229,6 +226,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                         #TODO: also process structures on radar! (as they can block things!)
                         mem.radar[s,1] = min(mem.radar[s,1], dist_to_enemy) #closest enemy unit
                         mem.radar[s,3] += 1 #scale somehow?
+
 
 
                         if enemy.missing == 0: # currently visible enemy we can see
@@ -275,14 +273,18 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                             #TODO: visually test that this works somehow!
                             #Short range power projection: (only versus visible units? for now?)
                             power_ratio = np.clip(1.0 - max(0,dist_to_enemy - (attack_range+unit.movement_speed*2))/(unit.movement_speed*2) , 0.0, 1.0)
-                            power = (mem.health+mem.shield) * (attack_dps + unit.energy*0.1)
+                            power = (25+mem.health+mem.shield) * (1 + attack_dps + unit.energy*0.1)
 
                             enemy_power_ratio = np.clip(1.0 - max(0,dist_to_enemy - (enemy_attack_range+enemy.unit.movement_speed*2))/(enemy.unit.movement_speed*2) , 0.0, 1.0)
-                            enemy_power = (enemy.health+enemy.shield) * (enemy_attack_dps + enemy.unit.energy*0.1)
+                            enemy_power = (25+enemy.health+enemy.shield) * (1 + enemy_attack_dps + enemy.unit.energy*0.1)
 
-                            delta_power = power*power_ratio - enemy_power*enemy_power_ratio
-                            mem.radar[s,10] += delta_power
-                            mem.delta_power_projection += delta_power
+                            mem.power_projection += enemy_power * enemy_power_ratio # power projected against this unit
+                            mem.radar[s, 10] += enemy_power * enemy_power_ratio # power projected against from this angle
+                            enemy.power_projection += power * power_ratio
+
+                            #delta_power = power*power_ratio - enemy_power*enemy_power_ratio
+                            #mem.radar[s,10] += delta_power
+                            #mem.delta_power_projection += delta_power
 
 
                 if mem.enemy_in_range_count:
@@ -338,6 +340,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
     async def process_micro_unit(self, mem : UnitMemory):
         unit : Unit = mem.unit
+
+        mem.delta_power_projection = 0.0
 
         if not unit.is_active:
             return
@@ -554,6 +558,13 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                 attack_target_mem = enemy_mem
                 attack_target_in_range = (dist_to_enemy <= (attack_range + 1.0 + unit.movement_speed*0.5))
 
+
+            #some additional calculations for the slice:
+            s = determine_slice_nr(mem.position, enemy.position)
+            mem.radar[s, 11] += (enemy_mem.power_projection - mem.radar[s, 10])
+            mem.delta_power_projection += (enemy_mem.power_projection - mem.power_projection)
+
+
         # TODO: fix drones with specialization that they can defend correctly rather than just flee!
         # Drones should only be pulled in correct amounts
         # Drones should never leave the base area, should always want to return to mining asap
@@ -562,6 +573,16 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             attack_target = None
 
 
+        mem.delta_power_projection_lpf = mem.delta_power_projection_lpf*0.8 + mem.delta_power_projection*0.2
+
+        situation = mem.delta_power_projection - mem.delta_power_projection_lpf
+
+        if situation >= 100.0:
+            mem.good_bad = max(0,mem.good_bad + 1)
+            mem.attack_mode = True if mem.good_bad >= 3 else mem.attack_mode
+        else:
+            mem.good_bad = min(0, mem.good_bad - 1)
+            mem.attack_mode = False if mem.good_bad <= -10 else mem.attack_mode
 
         #TODO's for RADAR:
         # distance to fog of war
@@ -605,13 +626,15 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             #inputs[7] = min(1.0, inputs[7] * 0.25) # how far we can move back and still keep "an" enemy in range
             #inputs[8] = min(1.0, inputs[8] * 0.25) # how far we need to move back to escape enemy range
 
-            inputs[10] = np.clip(mem_radar[10]*0.01,-1.0,1.0) # short range delta power projection
+            inputs[11] = np.clip(mem_radar[11]*0.01,-1.0,1.0) # short range delta power projection
 
-            if self.debug:
-                if inputs[10] >= 0.0:
-                    self.draw_debug_line(mem.position, mem.position + (slice_delta[s] * inputs[10]) , (50,250,50))
-                else:
-                    self.draw_debug_line(mem.position, mem.position + (slice_delta[s] * -inputs[10]), (250, 50, 50))
+
+
+            # if self.debug:
+            #     if inputs[11] >= 0.0:
+            #         self.draw_debug_line(mem.position, mem.position + (slice_delta[s] * inputs[11]) , (50,250,50))
+            #     else:
+            #         self.draw_debug_line(mem.position, mem.position + (slice_delta[s] * -inputs[11]), (250, 50, 50))
 
             if mem.friend_in_range_count > 0 and mem.enemy_in_range_count > 0:
                 E2 = mem.enemy_centre.distance_to(dest_position)
@@ -646,6 +669,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
             inputs[27] = 1.0 if unit.is_cloaked or unit.is_burrowed else 0.0
             inputs[28] = 1.0 if self.has_creep(unit) else 0.0
             inputs[29] = min(1.0,mem.surround_length / (2*math.pi*unit.radius))
+            inputs[30] = np.sign(situation)  # better/worse situation?
+
             #inputs[29] = 1.0 if unit.weapon_cooldown else 0.0
             #inputs[30] = mem.speed2 # current speed
 
@@ -679,8 +704,9 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                 move_pri[attack_target_slice] += 0.1
             else:
                 move_pri[attack_target_slice] += 1.0 # this will help us get closer to target we want to kill
-                best_pri = -1
-                attack_target = None
+                if not mem.attack_mode:
+                    best_pri = -1
+                    attack_target = None
 
         # Calculate move priority across the 8 directions:
         move_pri2 = np.zeros(8)
@@ -707,9 +733,10 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         #TODO: flee!
 
         # decide if we should move the unit?
-        if best_pri < 0.0 or (not mem.is_melee and unit.weapon_cooldown and move_pri > 0.5) or (move_pri > 2.0):
-            #if self.debug:
-            #    self.draw_debug_line(unit, unit.position + slice_delta[best_slice], (50,255,50))
+        if best_pri < 0.0 or (not mem.is_melee and unit.weapon_cooldown and move_pri > 0.5) or (move_pri > 1.5 and not mem.attack_mode) or (move_pri > 3.0):
+            # moving
+            if self.debug:
+                self.draw_debug_line(unit, unit.position + slice_delta[best_slice], (50,255,50))
 
             if attack_target and best_pri >= 0.0 and attack_target_slice and best_slice == attack_target_slice:
                 #well, might as well move closer to what we want to attack (this avoids running past enemy units)
@@ -720,8 +747,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
         elif attack_target:
             #attack time!
-            #if self.debug:
-            #    self.draw_debug_line(unit, attack_target, (255, 50, 0))
+            if self.debug:
+                self.draw_debug_line(unit, attack_target, (255, 50, 0))
 
             self.do(unit.attack(attack_target))
 

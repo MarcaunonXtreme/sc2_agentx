@@ -571,7 +571,7 @@ class TrainingMaster:
 
     def setup_scenario_units(self):
 
-        print("Setting up units for new scenario...")
+        print("=Setting up units for new scenario=")
 
         good_sc = False
         while not good_sc:
@@ -588,6 +588,7 @@ class TrainingMaster:
 
 
         for p in range(2):
+            print(f"Player {p}: ",end="")
 
             unit_list : list = pp[p]
             assert isinstance(unit_list, list) and len(unit_list) > 0
@@ -601,8 +602,10 @@ class TrainingMaster:
                 tmp = XMem(units.type_id)
                 tmp.amount = random.randint(units.min,units.max)
                 if tmp.amount:
+                    print(f"{tmp.type_id}={tmp.amount}, ",end="")
                     data.units.append(tmp)
 
+            print("")
 
     async def create_scenario_units(self, agent, data):
         pos: Point2 = data.position.rounded
@@ -679,7 +682,7 @@ class TrainingMaster:
         if agent.setup_stage == 4:
             #Wait for created units and structures to spawn
             #Note: require at least 3 units always to progress
-            if len(agent.units.filter(lambda u: u.type_id not in [UnitTypeId.LARVA, UnitTypeId.EGG])) >= 3:
+            if len(agent.units.filter(lambda u: u.type_id not in [UnitTypeId.LARVA, UnitTypeId.EGG])) >= 1:
                 agent.setup_stage = 5
 
         if agent.setup_stage == 5:
@@ -764,7 +767,7 @@ print(f"Loading map = {map_name}")
 
 run_game(maps.get(map_name), [
     Bot(Race.Zerg, BotInTraining(the_master, global_debug)),
-    Bot(Race.Random, Protagonist(the_master, global_debug)),
+    Bot(Race.Terran, Protagonist(the_master, global_debug)),
 ], realtime=global_debug)
 
 print("run_game completed")

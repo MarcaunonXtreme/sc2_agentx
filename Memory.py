@@ -96,6 +96,7 @@ class UnitMemory:
 
             self.closest_friendly_dist = 10.0
             self.closest_friendly_tag = 0
+
             
         else:
             #for friendlies:
@@ -110,11 +111,18 @@ class UnitMemory:
 
             self.closest_enemy_dist = 10.0
 
+            self.delta_power_projection = 0.0
+            self.delta_power_projection_lpf = 0.0
+            self.good_bad = 0
+            self.attack_mode = False
+
         #both:
         self.surround_length = 0.0
         self.can_attack_count = 0
-        self.delta_power_projection = 0.0 #this is the micro short range one
-        self.delta_power_projection2 = 0.0  #this one is used for long distance decision making TODO
+        #self.delta_power_projection = 0.0 #this is the micro short range one
+        #self.delta_power_projection2 = 0.0  #this one is used for long distance decision making TODO
+        self.power_projection = 0.0
+
         #unit.attacking_count_melee = 0
         # unit.attacking_count_range = 0
         # unit.can_attack_count = 0

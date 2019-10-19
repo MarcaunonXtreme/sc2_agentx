@@ -111,8 +111,8 @@ class Protagonist(BaseAgentA1, TrainableAgent):
 
     async def process_units(self):
 
-        if not self.enemy_units:
-            return 
+        #if not self.enemy_units:
+        #    return
 
         u : Unit 
         for u in self.units:
@@ -127,8 +127,8 @@ class Protagonist(BaseAgentA1, TrainableAgent):
             #TODO: if defending this need to be completely different?
             e = self.game_info.map_center
             if self.enemy_memory is not None:
-                
-                best_dist = 100.0
+
+                best_dist = 1000.0
                 for mem in self.enemy_memory.values: #type: UnitMemory
                     dist = mem.position.distance_to(u)
                     if dist < best_dist:
@@ -136,6 +136,7 @@ class Protagonist(BaseAgentA1, TrainableAgent):
                         e = mem.position
 
             else:
+                print("WARNING: don't have enemy memory")
                 if self.enemy_units:
                     e = self.enemy_units.closest_to(u)
             if e:
