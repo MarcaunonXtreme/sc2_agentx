@@ -31,10 +31,12 @@ TARGET_BOTH = TARGET_GROUND | TARGET_AIR
 
 # Base class for unit info tracking
 class UnitInfoBase:
-    def __init__(self, agent : BaseAgentA1, type_id : UnitTypeId, upgrade_list ):
-        self.agent = agent 
+    def __init__(self, agent : BaseAgentA1, type_id : UnitTypeId, upgrades ):
+        assert isinstance(agent, BaseAgentA1)
+        self.agent = agent
         self.type_id = type_id
-        self.upgrades = upgrade_list
+        assert isinstance(upgrades, np.ndarray)
+        self.upgrades = upgrades
 
         self._type_data : UnitTypeData = agent._game_data.units[type_id.value]
         assert isinstance(self._type_data, UnitTypeData)
@@ -248,13 +250,13 @@ class UnitInfoBase:
 
 class UnitInfo_Zergling(UnitInfoBase):
     def get_movement_speed(self):
-        if self.upgrades[UpgradeId.ZERGLINGMOVEMENTSPEED]:
+        if self.upgrades[UpgradeId.ZERGLINGMOVEMENTSPEED.value]:
             return self._movement_speed*1.6
         else:
             return self._movement_speed
 
     def get_ground_attack_speed(self):
-        if self.upgrades[UpgradeId.ZERGLINGATTACKSPEED]:
+        if self.upgrades[UpgradeId.ZERGLINGATTACKSPEED.value]:
             return self._ground_attack_speed-0.15 
         else:    
             return self._ground_attack_speed
@@ -266,19 +268,19 @@ class UnitInfo_Zergling(UnitInfoBase):
                 self.speed_upgrade_counter += 2
             if self.speed_upgrade_counter >= 8:
                 print("Detected Enemy got Zergling MovementSpeed Upgrade!")
-                self.upgrades[UpgradeId.ZERGLINGMOVEMENTSPEED] = True
+                self.upgrades[UpgradeId.ZERGLINGMOVEMENTSPEED.value] = True
 
 
 class UnitInfo_Baneling(UnitInfoBase):
     def get_movement_speed(self):
-        if self.upgrades[UpgradeId.CENTRIFICALHOOKS]:
+        if self.upgrades[UpgradeId.CENTRIFICALHOOKS.value]:
             return self._movement_speed*1.18
         else:
             return self._movement_speed
 
 class UnitInfo_Roach(UnitInfoBase):
     def get_movement_speed(self):
-        if self.upgrades[UpgradeId.GLIALRECONSTITUTION]:
+        if self.upgrades[UpgradeId.GLIALRECONSTITUTION.value]:
             return self._movement_speed*1.33
         else:
             return self._movement_speed
@@ -286,19 +288,19 @@ class UnitInfo_Roach(UnitInfoBase):
 
 class UnitInfo_Hydra(UnitInfoBase):
     def get_movement_speed(self):
-        if self.upgrades[UpgradeId.EVOLVEMUSCULARAUGMENTS]:
+        if self.upgrades[UpgradeId.EVOLVEMUSCULARAUGMENTS.value]:
             return self._movement_speed*1.25
         else:
             return self._movement_speed
 
     def get_ground_attack_range(self):
-        if self.upgrades[UpgradeId.EVOLVEGROOVEDSPINES]:
+        if self.upgrades[UpgradeId.EVOLVEGROOVEDSPINES.value]:
             return self._ground_range + 1
         else:
             return self._ground_range
 
     def get_air_attack_range(self):
-        if self.upgrades[UpgradeId.EVOLVEGROOVEDSPINES]:
+        if self.upgrades[UpgradeId.EVOLVEGROOVEDSPINES.value]:
             return self._ground_range + 1
         else:
             return self._ground_range
@@ -307,13 +309,13 @@ class UnitInfo_Hydra(UnitInfoBase):
 class UnitInfo_Ultralist(UnitInfoBase):
 
     def get_movement_speed(self):
-        if self.upgrades[UpgradeId.ANABOLICSYNTHESIS]:
+        if self.upgrades[UpgradeId.ANABOLICSYNTHESIS.value]:
             return self._movement_speed*1.2
         else:
             return self._movement_speed
 
     def get_base_armor(self):
-        if self.upgrades[UpgradeId.CHITINOUSPLATING]:
+        if self.upgrades[UpgradeId.CHITINOUSPLATING.value]:
             return 4
         else:
             return 2
@@ -321,7 +323,7 @@ class UnitInfo_Ultralist(UnitInfoBase):
 class UnitInfo_Overlord(UnitInfoBase):
 
     def get_movement_speed(self):
-        if self.upgrades[UpgradeId.OVERLORDSPEED]:
+        if self.upgrades[UpgradeId.OVERLORDSPEED.value]:
             return self._movement_speed*2.91
         else:
             return self._movement_speed
@@ -330,7 +332,7 @@ class UnitInfo_Overlord(UnitInfoBase):
 class UnitInfo_Overseer(UnitInfoBase):
 
     def get_movement_speed(self):
-        if self.upgrades[UpgradeId.OVERLORDSPEED]:
+        if self.upgrades[UpgradeId.OVERLORDSPEED.value]:
             return self._movement_speed*1.29
         else:
             return self._movement_speed
@@ -341,49 +343,49 @@ class UnitInfo_Overseer(UnitInfoBase):
 
 class UnitInfo_Liberator(UnitInfoBase):
     def get_ground_attack_range(self):
-        if self.upgrades[UpgradeId.LIBERATORAGRANGEUPGRADE]:
+        if self.upgrades[UpgradeId.LIBERATORAGRANGEUPGRADE.value]:
             return 5+4
         else:
             return 5
 
 class UnitInfo_Banshee(UnitInfoBase):
     def get_movement_speed(self):
-        if self.upgrades[UpgradeId.BANSHEESPEED]:
+        if self.upgrades[UpgradeId.BANSHEESPEED.value]:
             return self._movement_speed*1.36
         else:
             return self._movement_speed
 
 class UnitInfo_Zealot(UnitInfoBase):
       def get_movement_speed(self):
-        if self.upgrades[UpgradeId.CHARGE]:
+        if self.upgrades[UpgradeId.CHARGE.value]:
             return self._movement_speed*1.31
         else:
             return self._movement_speed
 
 class UnitInfo_Adept(UnitInfoBase):
     def get_ground_attack_speed(self):
-        if self.upgrades[UpgradeId.ADEPTPIERCINGATTACK]:
+        if self.upgrades[UpgradeId.ADEPTPIERCINGATTACK.value]:
             return self._ground_attack_speed/1.45
         else:
             return self._ground_attack_speed
 
 class UnitInfo_Colossus(UnitInfoBase):
     def get_ground_attack_range(self):
-        if self.upgrades[UpgradeId.EXTENDEDTHERMALLANCE]:
+        if self.upgrades[UpgradeId.EXTENDEDTHERMALLANCE.value]:
             return 9
         else:
             return 7
 
 class UnitInfo_Observer(UnitInfoBase):
      def get_movement_speed(self):
-        if self.upgrades[UpgradeId.GRAVITICTHRUSTERS]:
+        if self.upgrades[UpgradeId.GRAVITICTHRUSTERS.value]:
             return self._movement_speed*1.5
         else:
             return self._movement_speed
 
 class UnitInfo_WarpPrism(UnitInfoBase):
      def get_movement_speed(self):
-        if self.upgrades[UpgradeId.GRAVITICDRIVE]:
+        if self.upgrades[UpgradeId.GRAVITICDRIVE.value]:
             return self._movement_speed*1.3
         else:
             return self._movement_speed
@@ -391,7 +393,7 @@ class UnitInfo_WarpPrism(UnitInfoBase):
 
 class UnitInfo_Phoenix(UnitInfoBase):
     def get_air_attack_range(self):
-        if self.upgrades[UpgradeId.PHOENIXRANGEUPGRADE]:
+        if self.upgrades[UpgradeId.PHOENIXRANGEUPGRADE.value]:
             return 7
         else:
             return 5
@@ -418,12 +420,10 @@ UNIT_INFO_LIST = {
 }
 
 
-def get_unit_info(agent : BaseAgentA1, type_id : UnitTypeId, upgrade_list) -> UnitInfoBase:
-    tmp = UNIT_INFO_LIST.get(type_id, None)
-    if not tmp:
-        tmp = UnitInfoBase(agent, type_id, upgrade_list)
-        UNIT_INFO_LIST[type_id] = tmp
-    return tmp
+
+def get_unit_info(type_id : UnitTypeId) -> type:
+    return UNIT_INFO_LIST.get(type_id, UnitInfoBase)
+
 
 
 

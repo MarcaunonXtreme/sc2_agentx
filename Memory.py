@@ -16,7 +16,7 @@ from sc2.constants import IS_LIGHT, IS_ARMORED, IS_BIOLOGICAL, IS_MECHANICAL, IS
 from luts.attackUpgrades import *
 
 #TODO:
-#from UnitInfo import get_unit_info, UnitInfoBase
+from UnitInfo import get_unit_info, UnitInfoBase
 
 #TODO: consider blips
 #TODO: consider snapshots
@@ -24,8 +24,10 @@ from luts.attackUpgrades import *
 #TODO: integrate the attribute system
 
 class UnitMemory:
-    def __init__(self, unit : Unit):
+    def __init__(self, unit : Unit, info : UnitInfoBase):
+        assert isinstance(info, UnitInfoBase)
 
+        self.info = info
         self.unit = unit
         self.tag = unit.tag
         self.type_id = UNIT_UNIT_ALIAS.get(unit.type_id, unit.type_id)
@@ -53,6 +55,8 @@ class UnitMemory:
         self.lost_shield = 0
         self.armor = 0
         self.shield_armor = 0
+
+        self.movement_speed = self.info.get_movement_speed()
 
         weapon_ground = next((weapon for weapon in unit._weapons if weapon.type in TARGET_GROUND), None)
         weapon_air = next((weapon for weapon in unit._weapons if weapon.type in TARGET_AIR), None)
@@ -209,6 +213,8 @@ class UnitMemory:
             #TODO: track temporary unit life-time to predict when they will go away
         self.position = unit.position
 
+        self.movement_speed = self.info.get_movement_speed()
+
 
     #update a enemy unit that is no longer visible
     def update_memory(self):
@@ -221,8 +227,14 @@ class UnitMemory:
 
 # Can serve as memory for friendly or enemy units
 class Memory:
-    def __init__(self):
+    def __init__(self, agent, upgrades):
+        assert agent is not None
+        assert upgrades is not None
         self.units = {}
+        self.upgrades = upgrades
+        self.agent = agent
+        self.info = {}
+
 
     @property
     def values(self):
@@ -238,7 +250,12 @@ class Memory:
 
         memory = self.units.get(unit.tag, None)
         if not memory:
-            memory = UnitMemory(unit)
+            i = self.info.get(unit.type_id, None)
+            if not i:
+                i = get_unit_info(unit.type_id)(self.agent, unit.type_id, self.upgrades)
+                self.info[unit.type_id] = i
+
+            memory = UnitMemory(unit, i)
             self.units[unit.tag] = memory
 
         memory.update(unit)

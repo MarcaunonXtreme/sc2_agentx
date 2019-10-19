@@ -154,8 +154,12 @@ class BaseAgentA1(sc2.BotAI):
 
         #indices gets set to TRUE when we have completed an upgrade
         self.got_upgrades = np.zeros(312,dtype=np.bool)
+        # for enemy tracking of upgrades
+        self.enemy_got_upgrades = np.zeros(312, dtype=np.bool)
         #indices gets increased when buildings are finished and decreased if they get destroyed
         self.got_structure = np.zeros(2048, dtype=np.uint8)
+        # for enemy tracking (TODO)
+        self.enemy_got_structure = np.zeros(2048, dtype=np.uint8)
 
         #will be filled in a bit later
         self.distance_from_wall = None
@@ -163,6 +167,8 @@ class BaseAgentA1(sc2.BotAI):
         self.main_base_area = None
         self.natural_base_area = None
         self.natural_wall_ramp_area = None
+
+
 
     async def on_start(self):
         #print(">on_start<")

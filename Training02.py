@@ -631,6 +631,12 @@ class TrainingMaster:
             self.setup_scenario_units()
             self.calculation_positions()
 
+            #share upgrades across:
+            for i,up in enumerate(self.players[1].got_upgrades):
+                self.players[0].enemy_got_upgrades[i] = up
+            for i, up in enumerate(self.players[0].got_upgrades):
+                self.players[1].enemy_got_upgrades[i] = up
+
 
         data : TrainingData = agent.training_data
 
@@ -767,7 +773,7 @@ print(f"Loading map = {map_name}")
 
 run_game(maps.get(map_name), [
     Bot(Race.Zerg, BotInTraining(the_master, global_debug)),
-    Bot(Race.Terran, Protagonist(the_master, global_debug)),
+    Bot(Race.Random, Protagonist(the_master, global_debug)),
 ], realtime=global_debug)
 
 print("run_game completed")

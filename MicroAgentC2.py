@@ -84,8 +84,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         self.flying_attack_network : AgentBrain.Network = None
         self.flying_move_network : AgentBrain.Network = None
 
-        self.enemy_memory : Memory = Memory()
-        self.friendly_memory : Memory = Memory()
+        self.enemy_memory : Memory = Memory(self, self.enemy_got_upgrades)
+        self.friendly_memory : Memory = Memory(self, self.got_upgrades)
 
     def get_brain(self) -> AgentBrain:
         return self.brain
@@ -726,9 +726,6 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         #if best_slice == attack_target_slice:
             #We moving in direction we want to attack...
         #    pass
-
-        if not mem.is_melee and unit.weapon_cooldown >= 1.0:
-            move_pri *= 1.5 #boost move priority for stutter stepping on range units
 
         #TODO: flee!
 
