@@ -21,6 +21,8 @@ from sc2.dicts.unit_trained_from import UNIT_TRAINED_FROM
 
 import Flood
 
+from MapInfo import MapInfo
+
 import pickle
 
 race_supply = {
@@ -168,7 +170,7 @@ class BaseAgentA1(sc2.BotAI):
         self.natural_base_area = None
         self.natural_wall_ramp_area = None
 
-
+        self.map_info : MapInfo = None
 
     async def on_start(self):
         #print(">on_start<")
@@ -184,6 +186,10 @@ class BaseAgentA1(sc2.BotAI):
 
         # Set game step here:
         self._client.game_step = 2
+
+        self.map_info = MapInfo(self.game_info.map_name, self)
+
+        #TODO: move this plateau and other stuff into MapInfo so it gets cached in files!
 
         #In order to do natural ramps and other things lets compute this:
         self.main_base_area = Flood.calculate_base_plateau(self.game_info.placement_grid, self.start_location.rounded, max_dist=24)
