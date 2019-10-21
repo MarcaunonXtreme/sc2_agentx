@@ -123,8 +123,12 @@ Based on E and F: (requires testing visually)
 17 = 1.0 if this is away from enemy centre [this is the escape direction]
 18 = 1.0 if this is towards enemy centre [the attack direction]
 
+20 = -1/+1 depending on further/closer to wall
+21 = idea of how far this direction goes before hitting wall. (TODO)
 
-a few general inputs:
+
+A few general inputs:
+
 26 = unit_hp percentage
 27 = is cloaked/burrowed
 28 = if on creep currently

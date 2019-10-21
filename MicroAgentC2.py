@@ -378,6 +378,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
 
         unit_hp = (unit.health + unit.shield) / (unit.health_max + unit.shield_max)
 
+        position_rounded = mem.position.rounded
 
         #Calculate additional RADAR stuff: (relative to friendly units in area)
         mem.friend_in_range_count = 0
@@ -603,6 +604,7 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
         #Process slices for move prioritization:
         for s in range(8):
             dest_position : Point2 = mem.position + (slice_delta[s] * 0.5)
+            dest_position_rounded = dest_position.rounded
 
             #inputs = np.copy(mem.radar[s])
             inputs = np.zeros(mem.radar[s].shape)
@@ -664,6 +666,8 @@ class MicroAgentC2(MacroAgentB1, TrainableAgent):
                 #
                 # if F2-F > 0.7 and abs(tmpb) < 0.2:
                 #     inputs[19] = 1.0 #Flanking direction
+
+            inputs[20] = np.sign(self.map_info.dist_from_wall[dest_position_rounded.y,dest_position_rounded.x] - self.map_info.dist_from_wall[position_rounded.y,position_rounded.x])
 
 
             #TODO: compare distance from battle line with range to help units align correctly before they engage?
